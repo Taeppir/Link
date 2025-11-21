@@ -5,6 +5,7 @@
 #include "../route_analysis/waypoint_snapper.h"
 #include "../results/route_results.h"
 #include "../types/voyage_types.h"
+#include "../pathfinding/route_planner.h"
 #include <memory>
 #include <string>
 
@@ -116,7 +117,7 @@ private:
     std::unique_ptr<GridBuilder> gridBuilder_;
     std::unique_ptr<WeatherLoader> weatherLoader_;
     
-    // 날씨 데이터 (캐시)
+    // 날씨 데이터
     std::map<std::string, WeatherDataInput> weatherData_;
     bool hasWeatherData_;
     
@@ -125,13 +126,39 @@ private:
     // ================================================================
     
     /**
+     * @brief 여러 웨이포인트를 거치는 경로 탐색
+     * @param grid Navigable grid
+     * @param waypoints Waypoint list (geo coordinates)
+     * @param planner Route planner strategy
+     * @param config Voyage configuration
+     * @param use_weather Whether to use weather data
+     * @return SinglePathResult Complete path result
+     */
+    SinglePathResult FindPathThroughWaypoints(
+        const NavigableGrid& grid,
+        const std::vector<GeoCoordinate>& waypoints,
+        IRoutePlanner& planner,
+        const VoyageConfig& config,
+        bool use_weather
+    );
+    
+    /**
      * @brief 경로 분석 수행 (그리드 경로 → PathPointDetail 생성)
+     * @param path_grid Grid path
+     * @param grid Navigable grid
+     * @param config Voyage configuration
+     * @param use_weather Whether to use weather data
+     * @param total_cost Total cost from A* (distance or fuel)
+     * @param total_time_hours Total time from A*
+     * @return SinglePathResult with detailed analysis
      */
     SinglePathResult AnalyzePathResult(
         const std::vector<GridCoordinate>& path_grid,
         const NavigableGrid& grid,
         const VoyageConfig& config,
-        bool use_weather
+        bool use_weather,
+        double total_cost,
+        double total_time_hours
     );
     
     /**

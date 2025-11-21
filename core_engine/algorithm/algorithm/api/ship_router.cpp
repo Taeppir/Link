@@ -1,16 +1,13 @@
 #include "ship_router.h"
 #include "../route_analysis/waypoint_snapper.h"
+#include "../pathfinding/shortest_planner.h"
+#include "../pathfinding/optimized_planner.h"
 #include "../utils/geo_calculations.h"
 #include "../utils/time_calculator.h"
 #include "../utils/fuel_calculator.h"
 #include "../utils/weather_interpolation.h"
 #include <iostream>
 #include <chrono>
-
-// TODO: pathfinding 엔진 include
-// #include "../pathfinding/a_star_pathfinder.h"
-// #include "../pathfinding/strategies/shortest_path_strategy.h"
-// #include "../pathfinding/strategies/optimized_path_strategy.h"
 
 ShipRouter::ShipRouter()
     : isInitialized_(false)
@@ -238,28 +235,17 @@ SinglePathResult ShipRouter::FindShortestPath(
     const std::vector<GeoCoordinate>& snapped_waypoints,
     const VoyageConfig& config)
 {
-    // TODO: A* 최단 경로 알고리즘 호출
-    std::cout << "[TODO] Shortest path algorithm not implemented yet" << std::endl;
+    // Create shortest path planner
+    ShortestRoutePlanner planner(grid, config.shipSpeedMps);
     
-    // 임시 구현 (나중에 실제 A* 알고리즘으로 교체)
-    SinglePathResult result;
-    result.success = false;
-    result.error_message = "Shortest path algorithm not implemented";
-    return result;
-    
-    /*
-    // 실제 구현 예시 (pathfinding 엔진 완성 후):
-    
-    AStarPathfinder pathfinder(grid);
-    ShortestPathStrategy strategy;
-    
-    std::vector<GridCoordinate> path_grid = pathfinder.FindPath(
+    // Find path through all waypoints
+    return FindPathThroughWaypoints(
+        grid,
         snapped_waypoints,
-        &strategy
+        planner,
+        config,
+        false  // no weather
     );
-    
-    return AnalyzePathResult(path_grid, grid, config, false);
-    */
 }
 
 SinglePathResult ShipRouter::FindOptimalPath(
@@ -268,92 +254,239 @@ SinglePathResult ShipRouter::FindOptimalPath(
     const VoyageConfig& config,
     const std::map<std::string, WeatherDataInput>& weather_data)
 {
-    // TODO: A* 최적 경로 알고리즘 호출
-    std::cout << "[TODO] Optimal path algorithm not implemented yet" << std::endl;
+    // Prepare voyage info
+    VoyageInfo voyageInfo;
+    voyageInfo.shipSpeed = config.shipSpeedMps;
+    voyageInfo.draft = config.draftM;
+    voyageInfo.trim = config.trimM;
     
-    // 임시 구현
-    SinglePathResult result;
-    result.success = false;
-    result.error_message = "Optimal path algorithm not implemented";
-    return result;
-    
-    /*
-    // 실제 구현 예시:
-    
-    AStarPathfinder pathfinder(grid);
-    OptimizedPathStrategy strategy(config, weather_data);
-    
-    std::vector<GridCoordinate> path_grid = pathfinder.FindPath(
-        snapped_waypoints,
-        &strategy
+    // Create optimized path planner
+    OptimizedRoutePlanner planner(
+        grid,
+        voyageInfo,
+        config.startTimeUnix,
+        weather_data,
+        config.shipSpeedMps
     );
     
-    return AnalyzePathResult(path_grid, grid, config, true);
-    */
+    // Find path through all waypoints
+    return FindPathThroughWaypoints(
+        grid,
+        snapped_waypoints,
+        planner,
+        config,
+        true  // use weather
+    );
 }
 
 // ================================================================
 // 내부 헬퍼 함수
 // ================================================================
 
+SinglePathResult ShipRouter::FindPathThroughWaypoints(
+    const NavigableGrid& grid,
+    const std::vector<GeoCoordinate>& waypoints,
+    IRoutePlanner& planner,
+    const VoyageConfig& config,
+    bool use_weather)
+{
+    if (waypoints.size() < 2) {
+        return MakeErrorPathResult("At least 2 waypoints required");
+    }
+    
+    // Containers for complete path
+    std::vector<GridCoordinate> complete_path;
+    double total_cost = 0.0;
+    double total_time_hours = 0.0;
+    
+    // Process each segment
+    for (size_t i = 0; i < waypoints.size() - 1; ++i) {
+        // Convert waypoints to grid coordinates
+        GridCoordinate start = grid.GeoToGrid(waypoints[i]);
+        GridCoordinate goal = grid.GeoToGrid(waypoints[i + 1]);
+        
+        std::cout << "  Segment " << (i + 1) << "/" << (waypoints.size() - 1)
+                  << ": (" << start.row << "," << start.col << ") -> ("
+                  << goal.row << "," << goal.col << ")" << std::endl;
+        
+        // Find path for this segment
+        PathSearchResult segment_result = planner.FindPath(grid, start, goal);
+        
+        // Check if path found
+        if (!segment_result.IsSuccess()) {
+            std::cerr << "[ERROR] Path not found for segment " << (i + 1) << std::endl;
+            return MakeErrorPathResult("Path not found for segment " + std::to_string(i + 1));
+        }
+        
+        // Accumulate cost and time
+        total_cost += segment_result.total_cost;
+        total_time_hours += segment_result.total_time_hours;
+        
+        // Append path (skip first point of segment if not first segment to avoid duplication)
+        if (i == 0) {
+            complete_path.insert(
+                complete_path.end(),
+                segment_result.path.begin(),
+                segment_result.path.end()
+            );
+        } else {
+            complete_path.insert(
+                complete_path.end(),
+                segment_result.path.begin() + 1,
+                segment_result.path.end()
+            );
+        }
+        
+        std::cout << "    ✓ Segment cost: " << segment_result.total_cost
+                  << ", time: " << segment_result.total_time_hours << "h" << std::endl;
+    }
+    
+    std::cout << "  Complete path: " << complete_path.size() << " points, "
+              << "total cost: " << total_cost
+              << ", total time: " << total_time_hours << "h" << std::endl;
+    
+    // Analyze path and create detailed result
+    return AnalyzePathResult(
+        complete_path,
+        grid,
+        config,
+        use_weather,
+        total_cost,
+        total_time_hours
+    );
+}
+
 SinglePathResult ShipRouter::AnalyzePathResult(
     const std::vector<GridCoordinate>& path_grid,
     const NavigableGrid& grid,
     const VoyageConfig& config,
-    bool use_weather)
+    bool use_weather,
+    double total_cost,
+    double total_time_hours)
 {
-    // TODO: RouteAnalyzer 사용
-    std::cout << "[TODO] Path analysis not implemented yet" << std::endl;
-    
-    SinglePathResult result;
-    result.success = false;
-    result.error_message = "Path analysis not implemented";
-    return result;
-    
-    /*
-    // 실제 구현 예시:
-    
-    RouteAnalyzer analyzer;
-    
-    VoyageInfo voyage_info;
-    voyage_info.shipSpeed = config.shipSpeedMps;
-    voyage_info.draft = config.draftM;
-    voyage_info.trim = config.trimM;
-    
-    auto weather = use_weather ? weatherData_ : std::map<std::string, WeatherDataInput>();
-    
-    SingleRouteAnalysis analysis = analyzer.AnalyzePath(
-        path_grid,
-        grid,
-        voyage_info,
-        config.startTimeUnix,
-        weather
-    );
-    
-    // SingleRouteAnalysis를 SinglePathResult로 변환
     SinglePathResult result;
     result.success = true;
-    result.summary.total_distance_km = analysis.summary.total_distance_km;
-    result.summary.total_time_hours = analysis.summary.total_time_hours;
-    result.summary.total_fuel_kg = analysis.summary.total_fuel_kg;
-    result.summary.average_speed_mps = analysis.summary.average_speed_mps;
-    result.summary.average_fuel_rate_kg_per_hour = analysis.summary.average_fuel_rate_kg_per_hour;
     
-    // path_details 변환
-    for (const auto& detail : analysis.point_details) {
+    // Set summary
+    result.summary.total_time_hours = total_time_hours;
+    
+    if (use_weather) {
+        // For optimized path: cost is fuel
+        result.summary.total_fuel_kg = total_cost;
+        result.summary.total_distance_km = 0.0;  // Calculate from path
+    } else {
+        // For shortest path: cost is distance
+        result.summary.total_distance_km = total_cost;
+        result.summary.total_fuel_kg = 0.0;  // Calculate from path
+    }
+    
+    // Prepare voyage info for detailed analysis
+    VoyageInfo voyageInfo;
+    voyageInfo.shipSpeed = config.shipSpeedMps;
+    voyageInfo.draft = config.draftM;
+    voyageInfo.trim = config.trimM;
+    
+    // Generate detailed point-by-point data
+    double cumulative_time = 0.0;
+    double cumulative_distance = 0.0;
+    double cumulative_fuel = 0.0;
+    
+    for (size_t i = 0; i < path_grid.size(); ++i) {
         PathPointDetail point;
-        point.position = detail.coordinate;
-        point.cumulative_time_hours = detail.cumulative_time_hours;
-        point.cumulative_distance_km = detail.cumulative_distance_km;
-        point.cumulative_fuel_kg = detail.cumulative_fuel_kg;
-        point.fuel_rate_kg_per_hour = detail.fuel_rate_kg_per_hour;
-        point.speed_mps = detail.current_speed_mps;
-        point.weather = detail.weather;
+        
+        // Position
+        point.position = grid.GridToGeo(path_grid[i]);
+        
+        // For points after the first, calculate segment data
+        if (i > 0) {
+            GeoCoordinate prevGeo = grid.GridToGeo(path_grid[i - 1]);
+            GeoCoordinate currGeo = point.position;
+            
+            // Calculate segment distance
+            double segment_dist = greatCircleDistance(
+                prevGeo.latitude, prevGeo.longitude,
+                currGeo.latitude, currGeo.longitude
+            );
+            
+            // Calculate segment time
+            double segment_time = timeCalculator(segment_dist, config.shipSpeedMps);
+            
+            // Calculate heading
+            voyageInfo.heading = calculateBearing(prevGeo, currGeo);
+            
+            // Mid-point for weather/fuel calculation
+            GeoCoordinate midGeo = {
+                (prevGeo.latitude + currGeo.latitude) / 2.0,
+                (prevGeo.longitude + currGeo.longitude) / 2.0
+            };
+            
+            unsigned int mid_time_sec = config.startTimeUnix +
+                static_cast<unsigned int>((cumulative_time + segment_time / 2.0) * 3600.0);
+            
+            // Get weather at mid-point
+            if (use_weather && !weatherData_.empty()) {
+                point.weather = getWeatherAtCoordinate(
+                    weatherData_,
+                    mid_time_sec,
+                    midGeo.latitude,
+                    midGeo.longitude
+                );
+                
+                // Calculate fuel rate
+                point.fuel_rate_kg_per_hour = fuelCalculator(
+                    mid_time_sec,
+                    midGeo.latitude, midGeo.longitude,
+                    weatherData_,
+                    voyageInfo
+                );
+            } else {
+                // Zero weather
+                point.fuel_rate_kg_per_hour = fuelCalculator_zero(
+                    mid_time_sec,
+                    midGeo.latitude, midGeo.longitude,
+                    voyageInfo
+                );
+            }
+            
+            // Calculate segment fuel
+            double segment_fuel = point.fuel_rate_kg_per_hour * segment_time;
+            
+            // Update cumulatives
+            cumulative_time += segment_time;
+            cumulative_distance += segment_dist;
+            cumulative_fuel += segment_fuel;
+            
+            // Store segment data
+            point.speed_mps = config.shipSpeedMps;
+            point.heading_degrees = voyageInfo.heading;
+        }
+        
+        // Store cumulative values
+        point.cumulative_time_hours = cumulative_time;
+        point.cumulative_distance_km = cumulative_distance;
+        point.cumulative_fuel_kg = cumulative_fuel;
+        
         result.path_details.push_back(point);
     }
     
+    // Update summary with calculated values
+    if (!use_weather) {
+        // For shortest path, we calculated fuel
+        result.summary.total_fuel_kg = cumulative_fuel;
+    } else {
+        // For optimized path, we calculated distance
+        result.summary.total_distance_km = cumulative_distance;
+    }
+    
+    // Calculate averages
+    if (total_time_hours > 0.0) {
+        result.summary.average_speed_mps = 
+            (cumulative_distance * 1000.0) / (total_time_hours * 3600.0);
+        result.summary.average_fuel_rate_kg_per_hour = 
+            cumulative_fuel / total_time_hours;
+    }
+    
     return result;
-    */
 }
 
 VoyageResult ShipRouter::MakeErrorResult(const std::string& error_message) {

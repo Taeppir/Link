@@ -72,27 +72,74 @@ target_link_libraries(route_analysis PUBLIC
     utils
 )
 
-
 # ============================================
-# 테스트 실행 파일
+# 5. pathfinding 라이브러리 
 # ============================================
-add_executable(test_grid
-    test/test_main.cpp
+add_library(pathfinding STATIC
+    pathfinding/path_utils.cpp
+    pathfinding/a_star_engine.cpp
+    pathfinding/shortest_planner.cpp
+    pathfinding/optimized_planner.cpp
 )
-target_link_libraries(test_grid PRIVATE
-    route_analysis
-    data_loading
+target_include_directories(pathfinding PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(pathfinding PUBLIC 
     types
     utils
 )
 
+# ============================================
+# 6. api 라이브러리 (ShipRouter)
+# ============================================
+add_library(ship_routing_api STATIC
+    api/ship_router.cpp
+)
+target_include_directories(ship_routing_api PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(ship_routing_api PUBLIC 
+    types
+    utils
+    data_loading
+    route_analysis
+    pathfinding
+)
+
+
+# ============================================
+# 테스트 실행 파일 빌드
+# ============================================
+
+# Test 1: Grid Builder & Waypoint Snapper 테스트
+add_executable(test_grid_snapper
+    test/test_grid_snapper.cpp
+)
+target_link_libraries(test_grid_snapper PRIVATE
+    data_loading
+    route_analysis
+    types
+    utils
+)
+
+# Test 2: ShipRouter 전체 통합 테스트
+add_executable(test_ship_router
+    test/test_ship_router.cpp
+)
+target_link_libraries(test_ship_router PRIVATE
+    ship_routing_api
+    pathfinding
+    data_loading
+    route_analysis
+    types
+    utils
+)
 
 # ============================================
 # 빌드 정보 출력
 # ============================================
 message(STATUS "================================")
 message(STATUS "Build Configuration:")
-message(STATUS "  types: grid_types.cpp")
+message(STATUS "  types: 2 files")
 message(STATUS "  utils: 4 files")
 message(STATUS "  data_loading: 4 files")
+message(STATUS "  route_analysis: 1 file")
+message(STATUS "  pathfinding: 4 files")
+message(STATUS "  api: 1 file (ship_router)")
 message(STATUS "================================")

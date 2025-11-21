@@ -2,12 +2,12 @@
 
 #include "path_types.h"
 #include "../types/grid_types.h"
+#include "../utils/geo_calculations.h"
 
 // ================================================================
 // Constants
 // ================================================================
 constexpr double MAX_ANGLE_DEGREES = 90.0;
-constexpr double PI = 3.14159265358979323846;
 
 // ================================================================
 // 8-Direction Movement

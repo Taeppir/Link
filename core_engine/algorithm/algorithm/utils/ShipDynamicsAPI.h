@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // ===== 기존 ShipDynamicsAPI.h 내용 100% 그대로 =====
 

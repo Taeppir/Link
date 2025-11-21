@@ -1,5 +1,6 @@
 #pragma once
 #include "geo_types.h"
+#include "../utils/geo_calculations.h"
 #include <vector>
 #include <cstdint>
 #include <algorithm>
@@ -68,7 +69,6 @@ private:
 // ===== Grid Resolution Helper =====
 namespace GEBCOConstants {
     constexpr double KM_PER_PIXEL_LAT = 0.463;  // 15 arc-second
-    constexpr double PI = 3.14159265358979323846;
 }
 
 struct GridResolution {

@@ -12,6 +12,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ============================================
+# 날씨 데이터 경로 설정
+# ============================================
+set(WEATHER_DATA_PATH "D:/Capstone_Design/WeatherData_DSME_Format" 
+    CACHE PATH "Weather data directory path")
+
+message(STATUS "Weather Data Path: ${WEATHER_DATA_PATH}")
+
+# ============================================
 # GDAL 설정
 # ============================================
 set(GDAL_INCLUDE_DIR "C:/vcpkg/installed/x64-windows/include")
@@ -22,7 +30,7 @@ message(STATUS "GDAL Include: ${GDAL_INCLUDE_DIR}")
 message(STATUS "GDAL Library: ${GDAL_LIBRARY}")
 
 # ============================================
-# 1. types 라이브러리 (헤더 대부분, grid_types.cpp만 있음)
+# 1. types 라이브러리
 # ============================================
 add_library(types STATIC
     types/grid_types.cpp
@@ -73,7 +81,7 @@ target_link_libraries(route_analysis PUBLIC
 )
 
 # ============================================
-# 5. pathfinding 라이브러리 
+# 5. pathfinding 라이브러리
 # ============================================
 add_library(pathfinding STATIC
     pathfinding/path_utils.cpp
@@ -102,7 +110,6 @@ target_link_libraries(ship_routing_api PUBLIC
     pathfinding
 )
 
-
 # ============================================
 # 테스트 실행 파일 빌드
 # ============================================
@@ -118,6 +125,11 @@ target_link_libraries(test_grid_snapper PRIVATE
     utils
 )
 
+# 디버깅 시 환경변수 설정 (Visual Studio용)
+set_target_properties(test_grid_snapper PROPERTIES
+    VS_DEBUGGER_ENVIRONMENT "WEATHER_DATA_PATH=${WEATHER_DATA_PATH}"
+)
+
 # Test 2: ShipRouter 전체 통합 테스트
 add_executable(test_ship_router
     test/test_ship_router.cpp
@@ -131,6 +143,11 @@ target_link_libraries(test_ship_router PRIVATE
     utils
 )
 
+# 디버깅 시 환경변수 설정 (Visual Studio용)
+set_target_properties(test_ship_router PROPERTIES
+    VS_DEBUGGER_ENVIRONMENT "WEATHER_DATA_PATH=${WEATHER_DATA_PATH}"
+)
+
 # ============================================
 # 빌드 정보 출력
 # ============================================
@@ -142,4 +159,9 @@ message(STATUS "  data_loading: 4 files")
 message(STATUS "  route_analysis: 1 file")
 message(STATUS "  pathfinding: 4 files")
 message(STATUS "  api: 1 file (ship_router)")
+message(STATUS "")
+message(STATUS "Test Targets:")
+message(STATUS "  test_grid_snapper    - Grid & Snapping test")
+message(STATUS "  test_ship_router     - Full integration test")
+message(STATUS "  Environment: WEATHER_DATA_PATH=${WEATHER_DATA_PATH}")
 message(STATUS "================================")

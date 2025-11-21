@@ -2,8 +2,9 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
+#include <cstdlib>  // For getenv
 
-// ===== 기존 read_weather_data.cpp 로직을 클래스 메서드로 변환 =====
+namespace fs = std::filesystem;
 
 WeatherLoader::WeatherLoader() {
 }
@@ -42,19 +43,51 @@ WeatherDataInput WeatherLoader::LoadBinaryFile(const std::string& filepath) {
     
     file.close();
     
-    std::cout << "Loaded weather file: " << filepath << std::endl;
-    std::cout << "  Time: " << data.iNumTime << " steps, Lat: " << data.iNumLat 
+    std::cout << "  ✓ Loaded: " << fs::path(filepath).filename().string() << std::endl;
+    std::cout << "    Time: " << data.iNumTime << " steps, Lat: " << data.iNumLat 
               << ", Lon: " << data.iNumLon << std::endl;
     
     return data;
 }
 
 std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData() {
+    return LoadWeatherData("");  // Use environment variable
+}
+
+std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData(const std::string& directory) {
     std::map<std::string, WeatherDataInput> weatherData;
     
-    // 날씨 데이터 파일 경로 (실제 경로로 수정 필요)
-    const std::string weatherDir = "./weather_data/";  // 또는 설정 파일에서 읽기
+    // Determine weather data directory
+    std::string weatherDir;
     
+    if (!directory.empty()) {
+        // Use provided directory
+        weatherDir = directory;
+        std::cout << "[WeatherLoader] Using provided directory: " << weatherDir << std::endl;
+    } else {
+        // Try to get from environment variable
+        const char* envPath = std::getenv("WEATHER_DATA_PATH");
+        if (envPath != nullptr) {
+            weatherDir = envPath;
+            std::cout << "[WeatherLoader] Using environment variable: " << weatherDir << std::endl;
+        } else {
+            // Fallback to default
+            weatherDir = "./weather_data";
+            std::cout << "[WeatherLoader] No environment variable, using default: " << weatherDir << std::endl;
+        }
+    }
+    
+    // Check if directory exists
+    if (!fs::exists(weatherDir)) {
+        std::cerr << "Warning: Weather data directory not found: " << weatherDir << std::endl;
+        std::cerr << "Tip: Set WEATHER_DATA_PATH environment variable or provide directory path" << std::endl;
+        std::cout << "Warning: No weather data loaded. Using zero weather conditions." << std::endl;
+        return weatherData;
+    }
+    
+    std::cout << "[WeatherLoader] Loading weather data from: " << weatherDir << std::endl;
+    
+    // Expected weather files
     const std::vector<std::string> weatherFiles = {
         "WindDir.bin",
         "WindSpd.bin",
@@ -65,28 +98,32 @@ std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData() {
         "WavePrd.bin"
     };
     
+    // Load each file
+    int loadedCount = 0;
     for (const auto& filename : weatherFiles) {
-        std::string filepath = weatherDir + filename;
+        fs::path filepath = fs::path(weatherDir) / filename;
         
         // 파일 존재 확인
-        if (!std::filesystem::exists(filepath)) {
+        if (!fs::exists(filepath)) {
             std::cerr << "Warning: Weather file not found: " << filepath << std::endl;
             continue;
         }
         
         // 파일 로드
-        WeatherDataInput data = LoadBinaryFile(filepath);
+        WeatherDataInput data = LoadBinaryFile(filepath.string());
         
         // 로드 성공 시 맵에 추가
         if (!data.data.empty()) {
             weatherData[filename] = data;
+            loadedCount++;
         }
     }
     
     if (weatherData.empty()) {
         std::cout << "Warning: No weather data loaded. Using zero weather conditions." << std::endl;
     } else {
-        std::cout << "Successfully loaded " << weatherData.size() << " weather files." << std::endl;
+        std::cout << "[WeatherLoader] Successfully loaded " << loadedCount << "/" 
+                  << weatherFiles.size() << " weather files" << std::endl;
     }
     
     return weatherData;

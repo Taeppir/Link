@@ -183,11 +183,8 @@ int main() {
         std::string gebcoPath = "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GEBCO_2024_sub_ice_topo.nc";
         std::cout << "  Loading GEBCO: " << gebcoPath << std::endl;
         
-        std::string gshhsPath = "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GSHHS_i_L1.shp";
-        std::cout << "  Loading GSHHS: " << gshhsPath << std::endl;
-        
-
-        if (!router.Initialize(gebcoPath, gshhsPath)) {
+        if (!router.Initialize(gebcoPath, 
+                              "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GSHHS_i_L1.shp")) {
             std::cerr << "✗ Failed to initialize ShipRouter" << std::endl;
             return 1;
         }
@@ -196,10 +193,11 @@ int main() {
         
         // Load weather data (optional)
         std::cout << "\n  Loading weather data..." << std::endl;
-        if (router.LoadWeatherData("weather/")) {
-            std::cout << "  ✓ Weather data loaded" << std::endl;
+        // Empty string = use WEATHER_DATA_PATH environment variable
+        if (router.LoadWeatherData("")) {
+            std::cout << "  ✓ Weather data loaded (or using zero conditions)" << std::endl;
         } else {
-            std::cout << "  ⚠ No weather data (will use zero conditions)" << std::endl;
+            std::cout << "  ⚠ Weather loading encountered issues" << std::endl;
         }
         
         // ========================================
@@ -236,7 +234,7 @@ int main() {
         config.maxSnapRadiusKm = 50.0;          // 50 km snap radius
         config.startTimeUnix = 0;               // Simulation start time
         config.calculateShortest = true;        // Calculate shortest path
-        config.calculateOptimized = true;       // Calculate optimized path
+        config.calculateOptimized = true;      // ⚠️ Skip optimized (requires DLL)
         
         std::cout << "\nVoyage Parameters:" << std::endl;
         std::cout << "  • Ship Speed:      " << config.shipSpeedMps << " m/s" << std::endl;

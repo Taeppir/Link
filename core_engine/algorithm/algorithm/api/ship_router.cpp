@@ -57,7 +57,9 @@ bool ShipRouter::LoadWeatherData(const std::string& weather_dir) {
     
     try {
         weatherLoader_ = std::make_unique<WeatherLoader>();
-        weatherData_ = weatherLoader_->LoadWeatherData();
+        
+        // If weather_dir is empty, WeatherLoader will use environment variable
+        weatherData_ = weatherLoader_->LoadWeatherData(weather_dir);
         
         hasWeatherData_ = !weatherData_.empty();
         

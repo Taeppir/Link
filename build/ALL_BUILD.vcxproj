@@ -178,6 +178,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{08B20D8F-2EE0-3386-A42A-9A304AF013EA}</Project>
       <Name>data_loading</Name>
     </ProjectReference>
+    <ProjectReference Include="C:\Users\kth12\Downloads\link\build\route_analysis.vcxproj">
+      <Project>{8EB8E0AB-DCF9-33AE-A78B-0ED5777A8766}</Project>
+      <Name>route_analysis</Name>
+    </ProjectReference>
     <ProjectReference Include="C:\Users\kth12\Downloads\link\build\test_grid.vcxproj">
       <Project>{68CA2072-DC51-327B-B791-9458B3F7E0FB}</Project>
       <Name>test_grid</Name>

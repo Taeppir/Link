@@ -1,0 +1,36 @@
+.vs/
+*.vspscc
+*.vssscc
+*.suo
+*.VC.db
+*.opensdf
+*.sdf
+*.exe
+*.obj
+*.dll
+*.pdb
+*.user
+*.tlog
+*.ilk
+*.idb
+*.log
+*.recipe
+*.VC.opendb
+*.FileListAbsolute.txt
+vcpkg.applocal.log
+*.json
+
+# Project specific files
+*.vcxproj.user
+
+.vscode/
+
+__pycache__/
+*.pyc
+venv/
+.venv/
+env/
+
+# 대용량 데이터 폴더 무시
+core_engine/algorithm/algorithm/data/
+data/

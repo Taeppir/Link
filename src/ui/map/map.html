@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>Route Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      window.__overlayQueue = [];
+      window.toggleOverlay = function (name, on) {
+        window.__overlayQueue.push([name, !!on]);
+      };
+
+      window.__routeQueue = [];
+      window.setWaypoints = function (payload) {
+        window.__routeQueue.push(payload);
+      };
+    </script>
+
+    <link rel="stylesheet" href="./vendor/leaflet/leaflet.css" />
+    <script src="./vendor/leaflet/leaflet.js"></script>
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+    <style>
+      html,
+      body,
+      #map {
+        height: 100%;
+        margin: 0;
+      }
+      .legend {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        background: #fff;
+        padding: 8px 10px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        font-size: 12px;
+        z-index: 500;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div class="legend">
+      <div><span class="dot" style="background: #2ecc71"></span>출발지</div>
+      <div><span class="dot" style="background: #3498db"></span>경유지</div>
+      <div><span class="dot" style="background: #e74c3c"></span>도착지</div>
+    </div>
+
+    <script>
+      function whenLeafletReady(cb) {
+        const t0 = Date.now();
+        (function wait() {
+          if (window.L && typeof L.map === "function") return cb();
+          if (Date.now() - t0 > 5000) return;
+          setTimeout(wait, 50);
+        })();
+      }
+
+      // ✅ QWebChannel bridge 바인딩 보장
+      (function ensureBridge() {
+        function bind() {
+          if (window.bridge) return;
+          if (
+            window.qt &&
+            window.qt.webChannelTransport &&
+            window.QWebChannel
+          ) {
+            new QWebChannel(window.qt.webChannelTransport, function (channel) {
+              window.bridge = channel.objects.bridge;
+            });
+          }
+        }
+        bind();
+        const t = setInterval(function () {
+          if (window.bridge) return clearInterval(t);
+          bind();
+        }, 50);
+        setTimeout(() => clearInterval(t), 5000);
+      })();
+
+      let map, layerGroup;
+      const overlays = {};
+
+      function colorByType(t) {
+        if (t === "출발지") return "#2ecc71";
+        if (t === "도착지") return "#e74c3c";
+        return "#3498db";
+      }
+      function iconByType(t) {
+        const c = colorByType(t);
+        return L.divIcon({
+          className: "custom-pin",
+          html: `<div style="width:16px;height:16px;border-radius:50%;
+                 background:${c}; border:2px solid #fff; box-shadow:0 0 6px rgba(0,0,0,.35);"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        });
+      }
+
+      function initMap() {
+        map = L.map("map", { zoomControl: true }).setView([35.17, 129.07], 6);
+
+        // CORS 허용되는 베이스 후보
+        const candidates = [
+          {
+            name: "OSM",
+            url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+          },
+          {
+            name: "OSM-a",
+            url: "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          },
+          {
+            name: "HOT",
+            url: "https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+          },
+          {
+            name: "Carto",
+            url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+            subdomains: "abcd",
+          },
+        ];
+
+        let tried = 0;
+        function tryNextBase() {
+          if (tried >= candidates.length) {
+            showInfo("타일 서버 접근 불가: 네트워크/방화벽 확인");
+            return;
+          }
+          const c = candidates[tried++];
+          const layer = L.tileLayer(c.url, { maxZoom: 19, crossOrigin: true })
+            .on("load", () => {
+              layer.addTo(map);
+            })
+            .on("tileerror", (e) => {
+              console.error("[Tiles] tileerror:", e?.url || e);
+              if (map.hasLayer(layer)) map.removeLayer(layer);
+              tryNextBase();
+            });
+          layer.addTo(map);
+        }
+        tryNextBase();
+
+        layerGroup = L.layerGroup().addTo(map);
+        const interactGroup = L.layerGroup().addTo(map);
+        const __interactive = { latlngs: [], markers: [], polyline: null };
+
+        map
+          .getContainer()
+          .addEventListener("contextmenu", (e) => e.preventDefault());
+
+        function redrawInteractive() {
+          if (__interactive.polyline) {
+            interactGroup.removeLayer(__interactive.polyline);
+            __interactive.polyline = null;
+          }
+          if (__interactive.latlngs.length >= 2) {
+            __interactive.polyline = L.polyline(__interactive.latlngs, {
+              weight: 3,
+              opacity: 0.95,
+            }).addTo(interactGroup);
+          }
+        }
+
+        function popLastInteractive() {
+          const lastMarker = __interactive.markers.pop();
+          if (lastMarker) interactGroup.removeLayer(lastMarker);
+          __interactive.latlngs.pop();
+          __interactive.markers.forEach((m, i) => {
+            const type = i === 0 ? "출발지" : "경유지";
+            m.setIcon(iconByType(type));
+          });
+          redrawInteractive();
+        }
+
+        // === 우클릭으로 점 추가 ===
+        map.on("contextmenu", (e) => {
+          const ll = [e.latlng.lat, e.latlng.lng];
+          const idx = __interactive.latlngs.length;
+          const type = idx === 0 ? "출발지" : "경유지";
+
+          __interactive.latlngs.push(ll);
+
+          const marker = L.marker(ll, {
+            icon: iconByType(type),
+            zIndexOffset: type === "출발지" ? 300 : 100,
+          });
+          const label = `${type}\n(${ll[0].toFixed(5)}, ${ll[1].toFixed(5)})`;
+          marker.bindTooltip(label, { direction: "top", opacity: 0.9 });
+          marker.addTo(interactGroup);
+          __interactive.markers.push(marker);
+
+          redrawInteractive();
+
+          // 파이썬으로 전달 → 오른쪽 테이블에 즉시 반영
+          if (
+            window.bridge &&
+            typeof window.bridge.addInteractivePoint === "function"
+          ) {
+            window.bridge.addInteractivePoint(type, +ll[0], +ll[1], "");
+          } else {
+            console.warn("[Bridge] not ready");
+          }
+        });
+
+        window.getInteractiveWaypoints = function () {
+          return {
+            depart_time: "",
+            waypoints: __interactive.latlngs.map(([lat, lon], i) => ({
+              type: i === 0 ? "출발지" : "경유지",
+              lat,
+              lon,
+              port: "",
+            })),
+          };
+        };
+        window.clearInteractive = function () {
+          __interactive.markers.forEach((m) => interactGroup.removeLayer(m));
+          __interactive.markers.length = 0;
+          __interactive.latlngs.length = 0;
+          if (__interactive.polyline) {
+            interactGroup.removeLayer(__interactive.polyline);
+            __interactive.polyline = null;
+          }
+        };
+        window.undoInteractive = function () {
+          popLastInteractive();
+        };
+
+        overlays["Seamarks"] = L.tileLayer(
+          "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+          { opacity: 0.8, crossOrigin: true, maxZoom: 18, zIndex: 600 }
+        ).on("tileerror", (e) =>
+          console.error("[Tiles] depth tileerror:", e?.url || e)
+        );
+
+        overlays["Coast Lines"] = L.layerGroup();
+        let __coastlineLoaded = false;
+        async function ensureCoastlineLoaded() {
+          if (__coastlineLoaded) return;
+          try {
+            const COAST_GEOJSON_URL =
+              "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json";
+            const resp = await fetch(COAST_GEOJSON_URL, { mode: "cors" });
+            if (!resp.ok)
+              throw new Error("coastline fetch failed: " + resp.status);
+            const gj = await resp.json();
+            L.geoJSON(gj, {
+              style: {
+                color: "#1D5FA3",
+                weight: 3.0,
+                opacity: 0.6,
+                fillOpacity: 0,
+              },
+            }).addTo(overlays["Coast Lines"]);
+            __coastlineLoaded = true;
+          } catch (err) {
+            console.error("[Coastline] load error:", err);
+          }
+        }
+
+        window.toggleOverlay = function (name, on) {
+          const layer = overlays[name];
+          if (!layer) {
+            console.warn("[Overlay] Unknown:", name);
+            return;
+          }
+          if (on) {
+            if (name === "Coast Lines") ensureCoastlineLoaded();
+            if (!map.hasLayer(layer)) layer.addTo(map);
+          } else {
+            if (map.hasLayer(layer)) map.removeLayer(layer);
+          }
+        };
+
+        window.setWaypoints = function (payload) {
+          try {
+            layerGroup.clearLayers();
+            const list = payload?.waypoints;
+            if (!Array.isArray(list) || list.length === 0) {
+              console.info("[Route] 빈 경로. 레이어만 초기화했습니다.");
+              return;
+            }
+
+            const latlngs = [];
+            list.forEach((wp) => {
+              const type = wp?.type ?? wp?.t ?? wp?.kind ?? "경유지";
+              const lat = parseFloat(
+                wp?.lat ?? wp?.latitude ?? wp?.y ?? wp?.Lat ?? wp?.LAT
+              );
+              const lon = parseFloat(
+                wp?.lon ??
+                  wp?.lng ??
+                  wp?.longitude ??
+                  wp?.x ??
+                  wp?.Lon ??
+                  wp?.LON
+              );
+              const port = wp?.port ?? wp?.name ?? "";
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                console.warn("[Route] 잘못된 좌표:", wp);
+                return;
+              }
+              const ll = [lat, lon];
+              latlngs.push(ll);
+
+              const marker = L.marker(ll, {
+                icon: iconByType(type),
+                zIndexOffset:
+                  type === "출발지" ? 300 : type === "도착지" ? 200 : 100,
+              });
+              const label =
+                `${type}` +
+                (port ? ` · ${port}` : "") +
+                `\n(${lat.toFixed(5)}, ${lon.toFixed(5)})`;
+              marker.bindTooltip(label, { direction: "top", opacity: 0.9 });
+              marker.addTo(layerGroup);
+            });
+
+            if (latlngs.length >= 2)
+              L.polyline(latlngs, { weight: 3, opacity: 0.95 }).addTo(
+                layerGroup
+              );
+            if (latlngs.length === 1)
+              map.setView(latlngs[0], Math.max(map.getZoom(), 8));
+            else {
+              const bounds = L.latLngBounds(latlngs);
+              map.fitBounds(bounds, { padding: [20, 20] });
+            }
+          } catch (e) {
+            console.error("[Route] setWaypoints 실패:", e);
+          }
+        };
+
+        // 큐 비우기
+        if (
+          Array.isArray(window.__overlayQueue) &&
+          window.__overlayQueue.length
+        ) {
+          window.__overlayQueue.forEach(([n, o]) => window.toggleOverlay(n, o));
+          window.__overlayQueue.length = 0;
+        }
+        if (Array.isArray(window.__routeQueue) && window.__routeQueue.length) {
+          window.__routeQueue.forEach((p) => window.setWaypoints(p));
+          window.__routeQueue.length = 0;
+        }
+
+        function showInfo(msg) {
+          let box = document.getElementById("layer-info-box");
+          if (!box) {
+            box = document.createElement("div");
+            box.id = "layer-info-box";
+            box.style.cssText =
+              "position:absolute;top:12px;right:12px;z-index:600;background:rgba(0,0,0,.65);color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;";
+            document.body.appendChild(box);
+          }
+          box.textContent = msg;
+        }
+      }
+
+      whenLeafletReady(initMap);
+    </script>
+  </body>
+</html>

@@ -36,3 +36,5 @@ core_engine/algorithm/algorithm/data/
 data/
 
 core_engine/algorithm/algorithm/build/
+out/
+build/

@@ -61,15 +61,31 @@ target_link_libraries(data_loading PUBLIC
 )
 
 # ============================================
+# 4. route_analysis 라이브러리
+# ============================================
+add_library(route_analysis STATIC
+    route_analysis/waypoint_snapper.cpp
+)
+target_include_directories(route_analysis PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(route_analysis PUBLIC 
+    types
+    utils
+)
+
+
+# ============================================
 # 테스트 실행 파일
 # ============================================
 add_executable(test_grid
     test/test_main.cpp
 )
 target_link_libraries(test_grid PRIVATE
+    route_analysis
     data_loading
     types
+    utils
 )
+
 
 # ============================================
 # 빌드 정보 출력

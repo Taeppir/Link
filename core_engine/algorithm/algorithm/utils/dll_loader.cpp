@@ -13,7 +13,7 @@ private:
     CalculateShipDynamicsFunc calculateFunc;
 
     void LoadDLL() {
-        hDll = LoadLibrary(L"ShipDynamics.dll");
+        hDll = LoadLibraryW(L"ShipDynamics.dll");
         if (hDll == NULL) {
             throw std::runtime_error("ERROR: Cannot load ShipDynamics.dll");
         }

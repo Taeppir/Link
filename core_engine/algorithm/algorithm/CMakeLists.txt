@@ -61,6 +61,17 @@ target_link_libraries(data_loading PUBLIC
 )
 
 # ============================================
+# 테스트 실행 파일
+# ============================================
+add_executable(test_grid
+    test/test_main.cpp
+)
+target_link_libraries(test_grid PRIVATE
+    data_loading
+    types
+)
+
+# ============================================
 # 빌드 정보 출력
 # ============================================
 message(STATUS "================================")

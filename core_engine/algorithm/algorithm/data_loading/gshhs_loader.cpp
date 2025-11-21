@@ -1,4 +1,4 @@
-#include "gshhs_loader.h"
+﻿#include "gshhs_loader.h"
 #include <iostream>
 
 GshhsLoader::GshhsLoader(const std::string& filepath)

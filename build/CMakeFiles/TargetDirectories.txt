@@ -1,0 +1,10 @@
+C:/Users/kth12/Downloads/link/build/CMakeFiles/types.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/utils.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/data_loading.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/route_analysis.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/pathfinding.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/ship_routing_api.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/algorithm_module.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/test_ship_router.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/kth12/Downloads/link/build/CMakeFiles/ZERO_CHECK.dir

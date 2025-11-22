@@ -25,14 +25,24 @@ vcpkg.applocal.log
 
 .vscode/
 
+# Python
 __pycache__/
 *.pyc
 venv/
 .venv/
 env/
+.vscode/
+.idea/
 
 # 대용량 데이터 폴더 무시
-core_engine/algorithm/algorithm/data/
-core_engine/algorithm/algorithm/build/
+data/
 out/
-build/
+
+# 빌드 산출불
+core_engine/algorithm/algorithm/build/
+core_engine/algorithm/algorithm/out/
+*.pyd
+*.dll
+
+# 예외: DLL 템플릿 유지 (선택사항)
+!data/dll/.gitkeep

@@ -1,9 +1,9 @@
-// test_ship_router.cpp - 상세 출력 버전
+// test_ship_router.cpp - 상세 출력 버전 (작업 디렉토리: LINK)
 
-#include "api/ship_router.h"
-#include "types/geo_types.h"
-#include "types/voyage_types.h"
-#include "results/route_results.h"
+#include "../api/ship_router.h"
+#include "../types/geo_types.h"
+#include "../types/voyage_types.h"
+#include "../results/route_results.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -81,14 +81,15 @@ int main() {
         
         ShipRouter router;
         
+        // ✨ 작업 디렉토리가 LINK로 설정되어 있으므로 data/ 상대 경로 사용
         if (!router.Initialize(
-            "../../../data/gebco/GEBCO_2024_sub_ice_topo.nc",
-            "../../../data/gshhs/GSHHS_i_L1.shp")) {
+            "data/gebco/GEBCO_2024_sub_ice_topo.nc",
+            "data/gshhs/GSHHS_i_L1.shp")) {
             std::cerr << "ERROR: Initialization failed" << std::endl;
             return 1;
         }
         
-        router.LoadWeatherData("");
+        router.LoadWeatherData("data/weather");
         
         // ========================================
         // 2. Route Calculation

@@ -1,7 +1,6 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h> // std::vector, std::map 자동 변환 필수
+#include <pybind11/stl.h>
 
-// 프로젝트 헤더 파일 포함
 #include "api/ship_router.h"
 #include "results/route_results.h"
 #include "types/geo_types.h"
@@ -61,7 +60,7 @@ PYBIND11_MODULE(algorithm_module, m) {
         .def_readwrite("trim", &VoyageInfo::trim);
 
     // ============================================================
-    // 4. VoyageConfig (항해 설정) - 중요!
+    // 4. VoyageConfig (항해 설정)
     // ============================================================
     py::class_<VoyageConfig>(m, "VoyageConfig")
         .def(py::init<>())
@@ -131,7 +130,7 @@ PYBIND11_MODULE(algorithm_module, m) {
         .def_readwrite("optimized_path", &VoyageResult::optimized_path);
 
     // ============================================================
-    // 6. 메인 API 클래스 (ShipRouter)
+    // 6. 메인 API 클래스 (ShipRouter) 
     // ============================================================
     
     py::class_<ShipRouter>(m, "ShipRouter")
@@ -145,11 +144,10 @@ PYBIND11_MODULE(algorithm_module, m) {
              "Load weather data from directory")
         .def("is_initialized", &ShipRouter::IsInitialized,
              "Check if router is initialized")
-        // ✨ VoyageConfig를 직접 받도록 수정!
         .def("calculate_route", 
              py::overload_cast<const std::vector<GeoCoordinate>&, const VoyageConfig&>(
                  &ShipRouter::CalculateRoute),
              py::arg("waypoints"), 
-             py::arg("config") = VoyageConfig(),
+             py::arg("config"),  // 기본 인자 제거!
              "Calculate route through waypoints with given configuration");
 }

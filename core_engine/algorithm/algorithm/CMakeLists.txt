@@ -1,6 +1,63 @@
 cmake_minimum_required(VERSION 3.15)
 
-# vcpkg toolchain 설정
+# ============================================
+# CRITICAL: 현재 활성화된 Python 자동 감지
+# ============================================
+# vcpkg의 Python을 찾지 않도록 설정
+set(Python_FIND_REGISTRY NEVER)
+set(Python_FIND_VIRTUALENV FIRST)  # 가상환경 우선
+set(CMAKE_FIND_USE_PACKAGE_REGISTRY FALSE)
+
+# PATH에서 python.exe 찾기 (conda 환경이 활성화되어 있으면 자동으로 찾음)
+find_program(ACTIVE_PYTHON_EXECUTABLE 
+    NAMES python python.exe
+    PATHS ENV PATH
+    NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+)
+
+if(ACTIVE_PYTHON_EXECUTABLE)
+    message(STATUS "🔍 발견된 Python: ${ACTIVE_PYTHON_EXECUTABLE}")
+    
+    # Python 버전 확인
+    execute_process(
+        COMMAND "${ACTIVE_PYTHON_EXECUTABLE}" --version
+        OUTPUT_VARIABLE PYTHON_VERSION_STRING
+        ERROR_VARIABLE PYTHON_VERSION_STRING
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "📌 Python 버전: ${PYTHON_VERSION_STRING}")
+    
+    # Python 3.9가 아니면 경고
+    if(NOT PYTHON_VERSION_STRING MATCHES "3\\.9")
+        message(WARNING "⚠️  Python 3.9가 아닙니다: ${PYTHON_VERSION_STRING}")
+        message(WARNING "⚠️  'conda activate ship_env' 를 실행했는지 확인하세요!")
+    endif()
+    
+    # Python 루트 디렉토리 추출 (python.exe의 상위 디렉토리)
+    get_filename_component(PYTHON_ROOT_DIR "${ACTIVE_PYTHON_EXECUTABLE}" DIRECTORY)
+    set(PYTHON_ROOT_DIR "${PYTHON_ROOT_DIR}" CACHE PATH "Python root directory" FORCE)
+    message(STATUS "🔍 Python 루트: ${PYTHON_ROOT_DIR}")
+    
+    # Python 경로 강제 설정
+    set(Python_ROOT_DIR "${PYTHON_ROOT_DIR}" CACHE PATH "Python root directory" FORCE)
+    set(Python_EXECUTABLE "${ACTIVE_PYTHON_EXECUTABLE}" CACHE FILEPATH "Python executable" FORCE)
+    set(Python3_EXECUTABLE "${ACTIVE_PYTHON_EXECUTABLE}" CACHE FILEPATH "Python3 executable" FORCE)
+    
+    # Python Development 경로 명시
+    set(Python_INCLUDE_DIR "${PYTHON_ROOT_DIR}/include" CACHE PATH "Python include directory" FORCE)
+    set(Python_LIBRARY "${PYTHON_ROOT_DIR}/libs/python39.lib" CACHE FILEPATH "Python library" FORCE)
+    set(Python_INCLUDE_DIRS "${PYTHON_ROOT_DIR}/include" CACHE PATH "Python include directories" FORCE)
+    set(Python_LIBRARIES "${PYTHON_ROOT_DIR}/libs/python39.lib" CACHE FILEPATH "Python libraries" FORCE)
+    
+    message(STATUS "📂 Python Include: ${Python_INCLUDE_DIR}")
+    message(STATUS "📂 Python Library: ${Python_LIBRARY}")
+else()
+    message(FATAL_ERROR "❌ Python을 찾을 수 없습니다! 'conda activate ship_env' 를 실행하세요.")
+endif()
+
+# vcpkg toolchain 설정 (Python 설정 후에!)
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
@@ -11,52 +68,48 @@ project(ShipRouting VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# UTF-8 인코딩 설정 (인코딩 경고 제거)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # ============================================
-# Pybind11 경로 직접 지정
+# Python 검증 및 확인
+# ============================================
+find_package(Python 3.9 EXACT REQUIRED COMPONENTS Interpreter)
+find_package(Python 3.9 EXACT COMPONENTS Development)
+
+message(STATUS "================================")
+message(STATUS "Python Configuration:")
+message(STATUS "  ✅ Python Version: ${Python_VERSION}")
+message(STATUS "  ✅ Python Executable: ${Python_EXECUTABLE}")
+if(Python_INCLUDE_DIRS)
+    message(STATUS "  ✅ Python Include: ${Python_INCLUDE_DIRS}")
+endif()
+if(Python_LIBRARIES)
+    message(STATUS "  ✅ Python Libraries: ${Python_LIBRARIES}")
+endif()
+message(STATUS "================================")
+
+# pybind11이 필요로 하는 변수들 설정
+if(NOT Python_INCLUDE_DIRS)
+    set(Python_INCLUDE_DIRS "${PYTHON_ROOT_DIR}/include" CACHE PATH "Python include dirs" FORCE)
+endif()
+if(NOT Python_LIBRARIES)
+    set(Python_LIBRARIES "${PYTHON_ROOT_DIR}/libs/python39.lib" CACHE FILEPATH "Python libs" FORCE)
+endif()
+
+set(PYBIND11_FINDPYTHON ON)
+set(PYBIND11_PYTHON_VERSION "3.9")
+
+# ============================================
+# Pybind11 설정
 # ============================================
 set(pybind11_DIR "C:/vcpkg/installed/x64-windows/share/pybind11")
 
 find_package(pybind11 CONFIG REQUIRED)
 message(STATUS "Pybind11 Found: ${pybind11_FOUND}")
 message(STATUS "Pybind11 DIR: ${pybind11_DIR}")
-
-# ============================================
-# 데이터 경로 자동 설정 (통합 구조)
-# ============================================
-# 모든 데이터: core_engine/algorithm/algorithm/data/
-
-set(DATA_DIR "${CMAKE_SOURCE_DIR}/data" CACHE PATH "Data directory")
-
-# 1. GEBCO/GSHHS 경로
-set(GEBCO_PATH "${DATA_DIR}/gebco/GEBCO_2024_sub_ice_topo.nc" 
-    CACHE FILEPATH "GEBCO file path")
-set(GSHHS_PATH "${DATA_DIR}/gshhs/GSHHS_i_L1.shp" 
-    CACHE FILEPATH "GSHHS file path")
-
-# 2. 날씨 데이터 경로 (우선순위: 환경변수 > data/weather/)
-if(NOT DEFINED WEATHER_DATA_PATH)
-    if(DEFINED ENV{WEATHER_DATA_PATH})
-        set(WEATHER_DATA_PATH "$ENV{WEATHER_DATA_PATH}" 
-            CACHE PATH "Weather data directory path")
-        message(STATUS "Weather data path from environment: ${WEATHER_DATA_PATH}")
-    else()
-        set(WEATHER_DATA_PATH "${DATA_DIR}/weather" 
-            CACHE PATH "Weather data directory path")
-        message(STATUS "Weather data path (default): ${WEATHER_DATA_PATH}")
-    endif()
-endif()
-
-# 3. DLL 경로
-set(DLL_SOURCE_DIR "${DATA_DIR}/dll" CACHE PATH "DLL source directory")
-
-
-message(STATUS "================================")
-message(STATUS "Data Paths (all in ${DATA_DIR}):")
-message(STATUS "  GEBCO:        ${GEBCO_PATH}")
-message(STATUS "  GSHHS:        ${GSHHS_PATH}")
-message(STATUS "  Weather Data: ${WEATHER_DATA_PATH}")
-message(STATUS "  DLL Source:   ${DLL_SOURCE_DIR}")
-message(STATUS "================================")
 
 # ============================================
 # GDAL 설정
@@ -72,20 +125,21 @@ message(STATUS "GDAL Library: ${GDAL_LIBRARY}")
 # DLL 자동 복사 함수
 # ============================================
 function(copy_dll_to_target target_name)
-    # ShipDynamics.dll 찾기
-    set(DLL_FILE "${DLL_SOURCE_DIR}/ShipDynamics.dll")
+    # 프로젝트 루트의 data/dll/ShipDynamics.dll
+    set(DLL_SOURCE "${CMAKE_SOURCE_DIR}/../../../data/dll/ShipDynamics.dll")
     
-    if(EXISTS "${DLL_FILE}")
-        # 빌드 후 DLL을 실행 파일과 같은 디렉토리로 복사
+    if(EXISTS "${DLL_SOURCE}")
+        # 빌드 디렉토리로 복사
         add_custom_command(TARGET ${target_name} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${DLL_FILE}"
+                "${DLL_SOURCE}"
                 "$<TARGET_FILE_DIR:${target_name}>/ShipDynamics.dll"
             COMMENT "Copying ShipDynamics.dll to ${target_name} output directory"
         )
         message(STATUS "  [DLL] Will copy ShipDynamics.dll for ${target_name}")
     else()
-        message(WARNING "  [DLL] ShipDynamics.dll not found at: ${DLL_FILE}")
+        message(WARNING "  [DLL] ShipDynamics.dll not found at: ${DLL_SOURCE}")
+        message(WARNING "  [DLL] Please place ShipDynamics.dll in: LINK/data/dll/")
     endif()
 endfunction()
 
@@ -173,11 +227,8 @@ target_link_libraries(ship_routing_api PUBLIC
 # ============================================
 # 7. Python Binding Module (algorithm_module)
 # ============================================
-pybind11_add_module(algorithm_module
-    bindings.cpp
-)
+pybind11_add_module(algorithm_module bindings.cpp)
 
-# 모듈이 기존 엔진 기능들을 사용할 수 있도록 라이브러리를 링크
 target_link_libraries(algorithm_module PRIVATE
     ship_routing_api
     pathfinding
@@ -187,30 +238,20 @@ target_link_libraries(algorithm_module PRIVATE
     types
 )
 
-# Python 모듈에도 DLL 복사
+# .pyd 파일을 프로젝트 루트로 자동 복사
+add_custom_command(TARGET algorithm_module POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:algorithm_module>"
+        "${CMAKE_SOURCE_DIR}/../../../$<TARGET_FILE_NAME:algorithm_module>"
+    COMMENT "Copying .pyd to project root: ${CMAKE_SOURCE_DIR}/../../../"
+)
+
+# Python 모듈에도 DLL 복사 (빌드 디렉토리용)
 copy_dll_to_target(algorithm_module)
 
 # ============================================
-# 테스트 실행 파일 빌드
+# 테스트 실행 파일 빌드 (선택사항)
 # ============================================
-
-# Test 1: Grid Builder & Waypoint Snapper 테스트
-add_executable(test_grid_snapper
-    test/test_grid_snapper.cpp
-)
-target_link_libraries(test_grid_snapper PRIVATE
-    data_loading
-    route_analysis
-    types
-    utils
-)
-
-# 환경변수 및 DLL 설정
-set_target_properties(test_grid_snapper PROPERTIES
-    VS_DEBUGGER_ENVIRONMENT "WEATHER_DATA_PATH=${WEATHER_DATA_PATH}"
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"  # ✨ 작업 디렉토리 설정
-)
-copy_dll_to_target(test_grid_snapper)
 
 # Test 2: ShipRouter 전체 통합 테스트
 add_executable(test_ship_router
@@ -224,13 +265,12 @@ target_link_libraries(test_ship_router PRIVATE
     types
     utils
 )
-
-# 환경변수 및 DLL 설정
-set_target_properties(test_ship_router PROPERTIES
-    VS_DEBUGGER_ENVIRONMENT "WEATHER_DATA_PATH=${WEATHER_DATA_PATH}"
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"  # ✨ 작업 디렉토리 설정
-)
 copy_dll_to_target(test_ship_router)
+
+# Visual Studio에서 실행 시 작업 디렉토리를 LINK 폴더로 설정
+set_target_properties(test_ship_router PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/../../.."
+)
 
 # ============================================
 # 빌드 정보 출력
@@ -245,13 +285,18 @@ message(STATUS "  pathfinding: 4 files")
 message(STATUS "  api: 1 file (ship_router)")
 message(STATUS "  [PYTHON] algorithm_module: bindings.cpp") 
 message(STATUS "")
-message(STATUS "Test Targets:")
-message(STATUS "  test_grid_snapper     - Grid & Snapping test")
-message(STATUS "  test_ship_router      - Full integration test")
+message(STATUS "Targets:")
 message(STATUS "  algorithm_module      - Python binding (.pyd)")
+message(STATUS "  test_grid_snapper     - Grid & Snapping test (optional)")
+message(STATUS "  test_ship_router      - Full integration test (optional)")
 message(STATUS "")
-message(STATUS "Auto Settings:")
-message(STATUS "  Working Directory: ${CMAKE_SOURCE_DIR}")
-message(STATUS "  DLL Auto-Copy: Enabled")
-message(STATUS "  Environment: WEATHER_DATA_PATH=${WEATHER_DATA_PATH}")
+message(STATUS "Auto-copy on build:")
+message(STATUS "  - algorithm_module.pyd -> LINK/")
+message(STATUS "  - ShipDynamics.dll -> LINK/")
+message(STATUS "")
+message(STATUS "Data files required in LINK/data/:")
+message(STATUS "  - gebco/GEBCO_2024_sub_ice_topo.nc")
+message(STATUS "  - gshhs/GSHHS_i_L1.shp")
+message(STATUS "  - weather/*.bin (optional)")
+message(STATUS "  - dll/ShipDynamics.dll")
 message(STATUS "================================")

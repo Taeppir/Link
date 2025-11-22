@@ -2,10 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 Ship Routing Algorithm - Python Integration Test
+커맨드라인으로 waypoints를 주입받아 실행
+
+사용 예시:
+    python test_algorithm.py --waypoints "35.0994,129.0336" "33.4996,126.5312"
+    python test_algorithm.py -w "37.5665,126.9780" "35.0994,129.0336" "33.4996,126.5312"
+    python test_algorithm.py  # 기본값: 부산 -> 제주
 """
 
 import os
 import sys
+import argparse
 from pathlib import Path
 
 # ================================================================
@@ -13,6 +20,12 @@ from pathlib import Path
 # ================================================================
 
 def setup_environment():
+    proj_lib = r"C:\vcpkg\installed\x64-windows\share\proj"
+    if os.path.exists(proj_lib):
+        os.environ['PROJ_LIB'] = proj_lib
+        print(f"✅ PROJ_LIB 설정: {proj_lib}")
+    
+    
     """DLL 경로 및 Python 모듈 경로 설정"""
     
     # DLL 경로 설정
@@ -22,8 +35,8 @@ def setup_environment():
         lib_dir = os.path.join(project_root, "Lib")
         VCPKG_BIN = os.getenv("VCPKG_BIN", r"C:\vcpkg\installed\x64-windows\bin")
         
-        # ✨ ShipDynamics.dll 경로
-        ship_dynamics_dir = os.path.join(project_root, "core_engine", "algorithm", "algorithm", "data", "dll")
+        # ✨ ShipDynamics.dll 경로 (새로운 구조: LINK/data/dll/)
+        ship_dynamics_dir = os.path.join(project_root, "data", "dll")
         
         # ✨ PATH 환경 변수에 추가 (C++ LoadLibrary가 찾을 수 있도록)
         if os.path.exists(ship_dynamics_dir):
@@ -85,267 +98,341 @@ def import_module():
 # ================================================================
 
 def find_data_directory():
-    """데이터 디렉토리 자동 탐색"""
+    """데이터 디렉토리 자동 탐색 (새로운 구조: LINK/data/)"""
     
     script_dir = Path(__file__).parent.absolute()
     
-    # 후보 경로들 (통합 구조)
-    candidates = [
-        script_dir / "core_engine" / "algorithm" / "algorithm" / "data",
-        script_dir / "data",  # 혹시 루트에 복사했다면
-    ]
+    # 새로운 통합 구조: LINK/data/
+    data_dir = script_dir / "data"
+    gebco = data_dir / "gebco" / "GEBCO_2024_sub_ice_topo.nc"
+    gshhs = data_dir / "gshhs" / "GSHHS_i_L1.shp"
     
-    for candidate in candidates:
-        gebco = candidate / "gebco" / "GEBCO_2024_sub_ice_topo.nc"
-        gshhs = candidate / "gshhs" / "GSHHS_i_L1.shp"
-        
-        if gebco.exists() and gshhs.exists():
-            print(f"✅ 데이터 폴더 발견: {candidate}")
-            return {
-                'data_dir': str(candidate),
-                'gebco': str(gebco),
-                'gshhs': str(gshhs),
-                'weather': str(candidate / "weather")
-            }
+    if gebco.exists() and gshhs.exists():
+        print(f"✅ 데이터 폴더 발견: {data_dir}")
+        return {
+            'data_dir': str(data_dir),
+            'gebco': str(gebco),
+            'gshhs': str(gshhs),
+            'weather': str(data_dir / "weather")
+        }
     
     print("\n❌ 데이터 폴더를 찾을 수 없습니다!")
     print("\n확인 사항:")
     print("  1. 데이터 파일 위치:")
-    print("     core_engine/algorithm/algorithm/data/gebco/GEBCO_2024_sub_ice_topo.nc")
-    print("     core_engine/algorithm/algorithm/data/gshhs/GSHHS_i_L1.shp")
+    print(f"     {gebco}")
+    print(f"     {gshhs}")
     print("  2. 현재 스크립트 실행 위치:", script_dir)
+    print("\n예상 구조:")
+    print("  LINK/")
+    print("  ├── data/")
+    print("  │   ├── gebco/GEBCO_2024_sub_ice_topo.nc")
+    print("  │   ├── gshhs/GSHHS_i_L1.shp")
+    print("  │   ├── weather/*.bin")
+    print("  │   └── dll/ShipDynamics.dll")
+    print("  └── test_algorithm.py (현재 스크립트)")
     
     return None
 
 # ================================================================
-# 3. 메인 테스트
+# 3. 커맨드라인 인자 파싱
 # ================================================================
 
-def run_test(algorithm_module):
+def parse_arguments():
+    """커맨드라인 인자 파싱"""
+    parser = argparse.ArgumentParser(
+        description='Ship Routing Algorithm - Integration Test',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+사용 예시:
+  # 기본값 (부산 -> 제주)
+  python test_algorithm.py
+  
+  # 2개 웨이포인트 (부산 -> 제주)
+  python test_algorithm.py --waypoints "35.0994,129.0336" "33.4996,126.5312"
+  
+  # 3개 웨이포인트 (서울 -> 부산 -> 제주)
+  python test_algorithm.py -w "37.5665,126.9780" "35.0994,129.0336" "33.4996,126.5312"
+  
+  # 고급 설정
+  python test_algorithm.py -w "35.0994,129.0336" "33.4996,126.5312" \\
+      --speed 10.0 --draft 12.0 --grid-size 3.0
+        '''
+    )
+    
+    parser.add_argument(
+        '-w', '--waypoints',
+        nargs='+',
+        help='웨이포인트 좌표 (위도,경도 형식). 예: "35.0994,129.0336" "33.4996,126.5312"'
+    )
+    
+    parser.add_argument(
+        '--speed',
+        type=float,
+        default=8.0,
+        help='선박 속도 (m/s). 기본값: 8.0'
+    )
+    
+    parser.add_argument(
+        '--draft',
+        type=float,
+        default=10.0,
+        help='선박 흘수 (m). 기본값: 10.0'
+    )
+    
+    parser.add_argument(
+        '--grid-size',
+        type=float,
+        default=5.0,
+        help='그리드 셀 크기 (km). 기본값: 5.0'
+    )
+    
+    args = parser.parse_args()
+    
+    # 웨이포인트 파싱
+    if args.waypoints:
+        waypoints = []
+        for wp in args.waypoints:
+            try:
+                lat, lon = map(float, wp.split(','))
+                waypoints.append((lat, lon))
+            except ValueError:
+                print(f"❌ 잘못된 웨이포인트 형식: {wp}")
+                print("   올바른 형식: \"위도,경도\" (예: \"35.0994,129.0336\")")
+                sys.exit(1)
+        
+        if len(waypoints) < 2:
+            print("❌ 최소 2개 이상의 웨이포인트가 필요합니다")
+            sys.exit(1)
+    else:
+        # 기본값: 부산 -> 제주 -> 오키나와 -> 가오슝 -> 싱가포르
+        print("\n⚠️  웨이포인트 미지정. 기본 경로 사용")
+        print("   (부산 → 제주 → 오키나와 → 가오슝 → 싱가포르)")
+        waypoints = [
+            (35.0994, 129.0336),  # WP0: 부산항
+            (33.4996, 126.5312),  # WP1: 제주도 제주시청
+            (26.2124, 127.6809),  # WP2: 일본 오키나와 나하시청
+            (22.6273, 120.3014),  # WP3: 대만 가오슝시청
+            (1.2903, 103.8520),   # WP4: 싱가포르
+        ]
+    
+    return waypoints, args
+
+# ================================================================
+# 4. 메인 테스트
+# ================================================================
+
+def run_test(algorithm_module, waypoints, config_args):
     """메인 테스트 함수"""
     
-    print("\n" + "="*60)
-    print("Ship Router Python Integration Test")
-    print("="*60)
+    print("\n" + "="*70)
+    print("🚢 Ship Router - 경로 계산 테스트")
+    print("="*70)
     
     # Step 1: 데이터 경로 찾기
-    print("\n[Step 1] 데이터 파일 검색...")
+    print("\n[1/6] 데이터 파일 검색...")
     data_paths = find_data_directory()
     if not data_paths:
         return False
     
-    print(f"  GEBCO: {data_paths['gebco']}")
-    print(f"  GSHHS: {data_paths['gshhs']}")
-    print(f"  Weather: {data_paths['weather']}")
+    print(f"  ✓ GEBCO: {data_paths['gebco']}")
+    print(f"  ✓ GSHHS: {data_paths['gshhs']}")
+    print(f"  ✓ Weather: {data_paths['weather']}")
     
     # Step 2: ShipRouter 생성 및 초기화
-    print("\n[Step 2] ShipRouter 초기화...")
+    print("\n[2/6] ShipRouter 초기화...")
     router = algorithm_module.ShipRouter()
     
     success = router.initialize(data_paths['gebco'], data_paths['gshhs'])
     
     if not success:
-        print("❌ 초기화 실패")
+        print("  ❌ 초기화 실패")
         return False
     
-    print("✅ 초기화 성공")
+    print("  ✓ 초기화 성공")
     
     # Step 3: 날씨 데이터 로딩 (선택적)
-    print("\n[Step 3] 날씨 데이터 로딩 (선택적)...")
+    print("\n[3/6] 날씨 데이터 로딩...")
     try:
         router.load_weather_data(data_paths['weather'])
-        print("✅ 날씨 데이터 로딩 시도 완료")
+        print("  ✓ 날씨 데이터 로딩 완료")
     except Exception as e:
-        print(f"⚠️  날씨 데이터 로딩 실패 (계속 진행): {e}")
+        print(f"  ⚠️  날씨 데이터 로딩 실패 (계속 진행): {e}")
     
     # Step 4: 웨이포인트 설정
-    print("\n[Step 4] 웨이포인트 설정...")
+    print(f"\n[4/6] 웨이포인트 설정 ({len(waypoints)}개)...")
     
-    # 테스트 케이스: 부산 -> 제주
-    waypoints = [
-        algorithm_module.GeoCoordinate(35.0994, 129.0336),  # 부산
-        algorithm_module.GeoCoordinate(33.4996, 126.5312),  # 제주
-    ]
+    # 커맨드라인에서 받은 waypoints를 GeoCoordinate로 변환
+    waypoint_objects = []
+    for i, (lat, lon) in enumerate(waypoints, 1):
+        waypoint_objects.append(algorithm_module.GeoCoordinate(lat, lon))
+        print(f"  WP{i}: ({lat:.4f}, {lon:.4f})")
     
-    print(f"  웨이포인트 1: 부산 ({waypoints[0].latitude}, {waypoints[0].longitude})")
-    print(f"  웨이포인트 2: 제주 ({waypoints[1].latitude}, {waypoints[1].longitude})")
-    
-    # Step 5: VoyageConfig 설정 (선택적)
-    print("\n[Step 5] 항해 설정...")
+    # Step 5: VoyageConfig 설정
+    print("\n[5/6] 항해 설정...")
     try:
         config = algorithm_module.VoyageConfig()
-        config.ship_speed_mps = 8.0
-        config.draft_m = 10.0
-        config.grid_cell_size_km = 5.0
+        config.ship_speed_mps = config_args.speed
+        config.draft_m = config_args.draft
+        config.grid_cell_size_km = config_args.grid_size
+        config.start_time_unix = 1577836800  # 2020-01-01 (날씨 데이터 시작 시간)
         config.calculate_shortest = True
         config.calculate_optimized = True
         
-        print(f"  선박 속도: {config.ship_speed_mps} m/s")
-        print(f"  흘수: {config.draft_m} m")
-        print(f"  그리드 크기: {config.grid_cell_size_km} km")
+        print(f"  ✓ 선박 속도: {config.ship_speed_mps} m/s")
+        print(f"  ✓ 흘수: {config.draft_m} m")
+        print(f"  ✓ 그리드 크기: {config.grid_cell_size_km} km")
+        print(f"  ✓ 출발 시간: 2020-01-01")
         
         use_config = True
     except AttributeError:
-        print("  ⚠️ VoyageConfig 미지원 - 기본 설정 사용")
-        config = None
+        print("  ⚠️  VoyageConfig를 찾을 수 없습니다. 기본 설정으로 진행합니다.")
         use_config = False
     
     # Step 6: 경로 계산
-    print("\n[Step 6] 경로 계산 중...")
-    print("  (이 작업은 몇 초에서 몇 분 소요될 수 있습니다)")
-    
+    print("\n[6/6] 경로 계산 시작...")
+    print("  (계산 중... 잠시만 기다려 주세요)")
+    print("")
     try:
         if use_config:
-            result = router.calculate_route(waypoints, config)
+            result = router.calculate_route(waypoint_objects, config)
         else:
-            result = router.calculate_route(waypoints)
+            result = router.calculate_route(waypoint_objects)
+        
+        print("  ✅ 경로 계산 완료!")
     except Exception as e:
-        print(f"❌ 경로 계산 중 오류: {e}")
+        print(f"  ❌ 경로 계산 실패: {e}")
         import traceback
         traceback.print_exc()
         return False
     
-    # Step 7: 결과 출력
-    print("\n[Step 7] 결과 분석...")
-    
-    if not result.success:
-        print(f"\n❌ 경로 계산 실패: {result.error_message}")
-        
-        # 스냅핑 정보 출력
-        if hasattr(result, 'snapping_info') and result.snapping_info:
-            print("\n웨이포인트 스냅핑 상태:")
-            for i, info in enumerate(result.snapping_info):
-                print(f"  웨이포인트 {i+1}:")
-                if hasattr(info, 'status'):
-                    print(f"    상태: {info.status}")
-                if hasattr(info, 'failure_reason') and info.failure_reason:
-                    print(f"    실패 원인: {info.failure_reason}")
-        
-        return False
-    
-    print("\n✅ 경로 계산 성공!")
-    
     # ================================================================
-    # 스냅핑 정보 상세 출력
+    # 결과 출력
     # ================================================================
-    if hasattr(result, 'snapping_info') and result.snapping_info:
-        print("\n" + "="*60)
-        print("📍 웨이포인트 스냅핑 상세 정보")
-        print("="*60)
-        for i, info in enumerate(result.snapping_info):
-            print(f"\n[웨이포인트 {i+1}]")
-            print(f"  원본 좌표: ({info.original.latitude:.6f}, {info.original.longitude:.6f})")
-            print(f"  스냅 상태: {info.status}")
+    print("\n" + "="*70)
+    print("📋 경로 계산 결과")
+    print("="*70)
+    
+    # 전체 상태
+    print(f"\n전체 성공 여부: {'✅ 성공' if result.success else '❌ 실패'}")
+    
+    # 웨이포인트 스냅 정보
+    if hasattr(result, 'snapping_info') and len(result.snapping_info) > 0:
+        print(f"\n【 웨이포인트 스냅 정보 】")
+        print("─"*70)
+        for i, info in enumerate(result.snapping_info, 1):
+            print(f"\n  ▸ 웨이포인트 #{i}")
+            print(f"    원본 좌표: ({info.original.latitude:.6f}, {info.original.longitude:.6f})")
             
-            if hasattr(info, 'was_snapped'):
-                print(f"  스냅 여부: {info.was_snapped}")
+            if hasattr(info, 'status'):
+                status_map = {
+                    algorithm_module.SnappingStatus.ALREADY_NAVIGABLE: "✅ 항해 가능",
+                    algorithm_module.SnappingStatus.SNAPPED: "✅ 스냅 완료",
+                    algorithm_module.SnappingStatus.FAILED: "❌ 스냅 실패"
+                }
+                print(f"    상태: {status_map.get(info.status, '알 수 없음')}")
             
             if info.status == algorithm_module.SnappingStatus.SNAPPED:
-                print(f"  스냅 좌표: ({info.snapped.latitude:.6f}, {info.snapped.longitude:.6f})")
-                print(f"  스냅 거리: {info.snapping_distance_km:.4f} km")
+                print(f"    스냅 좌표: ({info.snapped.latitude:.6f}, {info.snapped.longitude:.6f})")
+                print(f"    스냅 거리: {info.snapping_distance_km:.2f} km")
             
             if hasattr(info, 'failure_reason') and info.failure_reason:
-                print(f"  실패 원인: {info.failure_reason}")
+                print(f"    실패 원인: {info.failure_reason}")
     
     # ================================================================
     # 최단 경로 상세 출력
     # ================================================================
     if hasattr(result, 'shortest_path') and result.shortest_path.success:
-        print("\n" + "="*60)
-        print("📊 최단 경로 (Shortest Path) - 요약")
-        print("="*60)
+        print("\n" + "="*70)
+        print("📊 최단 경로 (Shortest Path) - 결과")
+        print("="*70)
         sp = result.shortest_path.summary
-        print(f"  총 거리:        {sp.total_distance_km:.4f} km")
-        print(f"  총 시간:        {sp.total_time_hours:.4f} hours ({sp.total_time_hours*60:.2f} min)")
-        print(f"  총 연료:        {sp.total_fuel_kg:.4f} kg ({sp.total_fuel_kg/1000:.6f} tons)")
-        print(f"  평균 속도:      {sp.average_speed_mps:.4f} m/s ({sp.average_speed_mps*1.94384:.2f} knots)")
-        print(f"  평균 연료율:    {sp.average_fuel_rate_kg_per_hour:.4f} kg/h")
-        print(f"  총 경로점 수:   {len(result.shortest_path.path_details)}")
+        print(f"\n【 경로 요약 】")
+        print(f"  총 거리:        {sp.total_distance_km:.2f} km")
+        print(f"  총 시간:        {sp.total_time_hours:.2f} hours ({sp.total_time_hours*60:.1f} min)")
+        print(f"  총 연료 소비:   {sp.total_fuel_kg:.2f} kg ({sp.total_fuel_kg/1000:.4f} tons)")
+        print(f"  평균 속도:      {sp.average_speed_mps:.2f} m/s ({sp.average_speed_mps*1.94384:.2f} knots)")
+        print(f"  평균 연료율:    {sp.average_fuel_rate_kg_per_hour:.2f} kg/h")
+        print(f"  총 경로점:      {len(result.shortest_path.path_details)}개")
         
-        # 경로점 상세 (처음 10개 + 마지막 10개)
-        print("\n" + "-"*60)
-        print("경로점 상세 정보 (처음 10개)")
-        print("-"*60)
-        print(f"{'No':>4} {'Lat':>10} {'Lon':>11} {'Dist(km)':>10} {'Time(h)':>9} {'Fuel(kg)':>10} {'Speed(m/s)':>11} {'Heading':>8}")
-        print("-"*60)
+        # 경로점 상세 (처음 5개만)
+        print(f"\n【 경로점 상세 정보 】(처음 5개만 표시)")
+        print("─"*70)
+        print(f"{'순번':^6} {'위도':^12} {'경도':^12} {'누적거리':^10} {'누적시간':^10} {'누적연료':^10}")
+        print(f"{'':^6} {'(deg)':^12} {'(deg)':^12} {'(km)':^10} {'(hour)':^10} {'(kg)':^10}")
+        print("─"*70)
         
-        for i, point in enumerate(result.shortest_path.path_details[:10]):
-            heading = point.heading_degrees if hasattr(point, 'heading_degrees') else 0.0
-            print(f"{i+1:4d} {point.position.latitude:10.6f} {point.position.longitude:11.6f} "
-                  f"{point.cumulative_distance_km:10.4f} {point.cumulative_time_hours:9.4f} "
-                  f"{point.cumulative_fuel_kg:10.4f} {point.speed_mps:11.4f} {heading:8.2f}")
+        for i, point in enumerate(result.shortest_path.path_details[:5], 1):
+            print(f"{i:^6} {point.position.latitude:12.6f} {point.position.longitude:12.6f} "
+                  f"{point.cumulative_distance_km:10.2f} {point.cumulative_time_hours:10.2f} "
+                  f"{point.cumulative_fuel_kg:10.2f}")
         
-        if len(result.shortest_path.path_details) > 20:
-            print(f"  ... ({len(result.shortest_path.path_details) - 20} points omitted)")
-            
-            print("\n경로점 상세 정보 (마지막 10개)")
-            print("-"*60)
-            for i, point in enumerate(result.shortest_path.path_details[-10:], 
-                                     start=len(result.shortest_path.path_details)-10):
-                heading = point.heading_degrees if hasattr(point, 'heading_degrees') else 0.0
-                print(f"{i+1:4d} {point.position.latitude:10.6f} {point.position.longitude:11.6f} "
-                      f"{point.cumulative_distance_km:10.4f} {point.cumulative_time_hours:9.4f} "
-                      f"{point.cumulative_fuel_kg:10.4f} {point.speed_mps:11.4f} {heading:8.2f}")
+        if len(result.shortest_path.path_details) > 10:
+            print(f"{'...':^6} {'...':^12} {'...':^12} {'...':^10} {'...':^10} {'...':^10}")
+            print(f"\n【 경로점 상세 정보 】(마지막 5개)")
+            print("─"*70)
+            for i, point in enumerate(result.shortest_path.path_details[-5:], 
+                                     start=len(result.shortest_path.path_details)-4):
+                print(f"{i:^6} {point.position.latitude:12.6f} {point.position.longitude:12.6f} "
+                      f"{point.cumulative_distance_km:10.2f} {point.cumulative_time_hours:10.2f} "
+                      f"{point.cumulative_fuel_kg:10.2f}")
         
         # 날씨 정보 (첫 번째 점)
         if len(result.shortest_path.path_details) > 0:
             first_point = result.shortest_path.path_details[0]
             if hasattr(first_point, 'weather'):
-                print("\n📡 첫 번째 경로점의 날씨 정보:")
+                print(f"\n【 출발점 날씨 정보 】")
                 w = first_point.weather
-                print(f"  풍향: {w.windDir:.2f}°, 풍속: {w.windSpd:.2f} m/s")
-                print(f"  조류 방향: {w.currDir:.2f}°, 조류 속도: {w.currSpd:.2f} m/s")
-                print(f"  파향: {w.waveDir:.2f}°, 파고: {w.waveHgt:.2f} m, 파주기: {w.wavePrd:.2f} s")
+                print(f"  풍향/풍속: {w.windDir:.1f}° / {w.windSpd:.2f} m/s")
+                print(f"  조류: {w.currDir:.1f}° / {w.currSpd:.2f} m/s")
+                print(f"  파향/파고/주기: {w.waveDir:.1f}° / {w.waveHgt:.2f} m / {w.wavePrd:.1f} s")
     
     # ================================================================
     # 최적 경로 상세 출력
     # ================================================================
     if hasattr(result, 'optimized_path') and result.optimized_path.success:
-        print("\n" + "="*60)
-        print("📊 최적 경로 (Optimized Path) - 요약")
-        print("="*60)
+        print("\n" + "="*70)
+        print("📊 최적 경로 (Optimized Path) - 결과")
+        print("="*70)
         op = result.optimized_path.summary
-        print(f"  총 거리:        {op.total_distance_km:.4f} km")
-        print(f"  총 시간:        {op.total_time_hours:.4f} hours ({op.total_time_hours*60:.2f} min)")
-        print(f"  총 연료:        {op.total_fuel_kg:.4f} kg ({op.total_fuel_kg/1000:.6f} tons)")
-        print(f"  평균 속도:      {op.average_speed_mps:.4f} m/s ({op.average_speed_mps*1.94384:.2f} knots)")
-        print(f"  평균 연료율:    {op.average_fuel_rate_kg_per_hour:.4f} kg/h")
-        print(f"  총 경로점 수:   {len(result.optimized_path.path_details)}")
+        print(f"\n【 경로 요약 】")
+        print(f"  총 거리:        {op.total_distance_km:.2f} km")
+        print(f"  총 시간:        {op.total_time_hours:.2f} hours ({op.total_time_hours*60:.1f} min)")
+        print(f"  총 연료 소비:   {op.total_fuel_kg:.2f} kg ({op.total_fuel_kg/1000:.4f} tons)")
+        print(f"  평균 속도:      {op.average_speed_mps:.2f} m/s ({op.average_speed_mps*1.94384:.2f} knots)")
+        print(f"  평균 연료율:    {op.average_fuel_rate_kg_per_hour:.2f} kg/h")
+        print(f"  총 경로점:      {len(result.optimized_path.path_details)}개")
         
-        # 경로점 상세 (처음 10개 + 마지막 10개)
-        print("\n" + "-"*60)
-        print("경로점 상세 정보 (처음 10개)")
-        print("-"*60)
-        print(f"{'No':>4} {'Lat':>10} {'Lon':>11} {'Dist(km)':>10} {'Time(h)':>9} {'Fuel(kg)':>10} {'Speed(m/s)':>11} {'Heading':>8}")
-        print("-"*60)
+        # 경로점 상세 (처음 5개만)
+        print(f"\n【 경로점 상세 정보 】(처음 5개만 표시)")
+        print("─"*70)
+        print(f"{'순번':^6} {'위도':^12} {'경도':^12} {'누적거리':^10} {'누적시간':^10} {'누적연료':^10}")
+        print(f"{'':^6} {'(deg)':^12} {'(deg)':^12} {'(km)':^10} {'(hour)':^10} {'(kg)':^10}")
+        print("─"*70)
         
-        for i, point in enumerate(result.optimized_path.path_details[:10]):
-            heading = point.heading_degrees if hasattr(point, 'heading_degrees') else 0.0
-            print(f"{i+1:4d} {point.position.latitude:10.6f} {point.position.longitude:11.6f} "
-                  f"{point.cumulative_distance_km:10.4f} {point.cumulative_time_hours:9.4f} "
-                  f"{point.cumulative_fuel_kg:10.4f} {point.speed_mps:11.4f} {heading:8.2f}")
+        for i, point in enumerate(result.optimized_path.path_details[:5], 1):
+            print(f"{i:^6} {point.position.latitude:12.6f} {point.position.longitude:12.6f} "
+                  f"{point.cumulative_distance_km:10.2f} {point.cumulative_time_hours:10.2f} "
+                  f"{point.cumulative_fuel_kg:10.2f}")
         
-        if len(result.optimized_path.path_details) > 20:
-            print(f"  ... ({len(result.optimized_path.path_details) - 20} points omitted)")
-            
-            print("\n경로점 상세 정보 (마지막 10개)")
-            print("-"*60)
-            for i, point in enumerate(result.optimized_path.path_details[-10:], 
-                                     start=len(result.optimized_path.path_details)-10):
-                heading = point.heading_degrees if hasattr(point, 'heading_degrees') else 0.0
-                print(f"{i+1:4d} {point.position.latitude:10.6f} {point.position.longitude:11.6f} "
-                      f"{point.cumulative_distance_km:10.4f} {point.cumulative_time_hours:9.4f} "
-                      f"{point.cumulative_fuel_kg:10.4f} {point.speed_mps:11.4f} {heading:8.2f}")
+        if len(result.optimized_path.path_details) > 10:
+            print(f"{'...':^6} {'...':^12} {'...':^12} {'...':^10} {'...':^10} {'...':^10}")
+            print(f"\n【 경로점 상세 정보 】(마지막 5개)")
+            print("─"*70)
+            for i, point in enumerate(result.optimized_path.path_details[-5:], 
+                                     start=len(result.optimized_path.path_details)-4):
+                print(f"{i:^6} {point.position.latitude:12.6f} {point.position.longitude:12.6f} "
+                      f"{point.cumulative_distance_km:10.2f} {point.cumulative_time_hours:10.2f} "
+                      f"{point.cumulative_fuel_kg:10.2f}")
         
         # 날씨 정보 (첫 번째 점)
         if len(result.optimized_path.path_details) > 0:
             first_point = result.optimized_path.path_details[0]
             if hasattr(first_point, 'weather'):
-                print("\n📡 첫 번째 경로점의 날씨 정보:")
+                print(f"\n【 출발점 날씨 정보 】")
                 w = first_point.weather
-                print(f"  풍향: {w.windDir:.2f}°, 풍속: {w.windSpd:.2f} m/s")
-                print(f"  조류 방향: {w.currDir:.2f}°, 조류 속도: {w.currSpd:.2f} m/s")
-                print(f"  파향: {w.waveDir:.2f}°, 파고: {w.waveHgt:.2f} m, 파주기: {w.wavePrd:.2f} s")
+                print(f"  풍향/풍속: {w.windDir:.1f}° / {w.windSpd:.2f} m/s")
+                print(f"  조류: {w.currDir:.1f}° / {w.currSpd:.2f} m/s")
+                print(f"  파향/파고/주기: {w.waveDir:.1f}° / {w.waveHgt:.2f} m / {w.wavePrd:.1f} s")
     
     # ================================================================
     # 비교 분석
@@ -353,58 +440,73 @@ def run_test(algorithm_module):
     if (hasattr(result, 'shortest_path') and result.shortest_path.success and
         hasattr(result, 'optimized_path') and result.optimized_path.success):
         
-        print("\n" + "="*60)
-        print("📈 최단 경로 vs 최적 경로 비교")
-        print("="*60)
+        print("\n" + "="*70)
+        print("📈 경로 비교 분석 (최적 경로 vs 최단 경로)")
+        print("="*70)
         
         sp = result.shortest_path.summary
         op = result.optimized_path.summary
         
+        print(f"\n{'항목':^12} {'최단 경로':>15} {'최적 경로':>15} {'차이':>15} {'비율':>10}")
+        print("─"*70)
+        
         # 거리 비교
         dist_diff = op.total_distance_km - sp.total_distance_km
         dist_pct = (dist_diff / sp.total_distance_km * 100) if sp.total_distance_km > 0 else 0
-        print(f"\n거리:")
-        print(f"  최단 경로:  {sp.total_distance_km:.4f} km")
-        print(f"  최적 경로:  {op.total_distance_km:.4f} km")
-        print(f"  차이:       {dist_diff:+.4f} km ({dist_pct:+.2f}%)")
+        print(f"{'거리':^12} {sp.total_distance_km:>13.2f} km {op.total_distance_km:>13.2f} km "
+              f"{dist_diff:>+13.2f} km {dist_pct:>+9.2f}%")
         
         # 시간 비교
         time_diff = op.total_time_hours - sp.total_time_hours
         time_pct = (time_diff / sp.total_time_hours * 100) if sp.total_time_hours > 0 else 0
-        print(f"\n시간:")
-        print(f"  최단 경로:  {sp.total_time_hours:.4f} hours")
-        print(f"  최적 경로:  {op.total_time_hours:.4f} hours")
-        print(f"  차이:       {time_diff:+.4f} hours ({time_pct:+.2f}%)")
+        print(f"{'시간':^12} {sp.total_time_hours:>13.2f} h  {op.total_time_hours:>13.2f} h  "
+              f"{time_diff:>+13.2f} h  {time_pct:>+9.2f}%")
         
         # 연료 비교
         fuel_diff = op.total_fuel_kg - sp.total_fuel_kg
         fuel_pct = (fuel_diff / sp.total_fuel_kg * 100) if sp.total_fuel_kg > 0 else 0
-        print(f"\n연료:")
-        print(f"  최단 경로:  {sp.total_fuel_kg:.4f} kg ({sp.total_fuel_kg/1000:.6f} tons)")
-        print(f"  최적 경로:  {op.total_fuel_kg:.4f} kg ({op.total_fuel_kg/1000:.6f} tons)")
-        print(f"  차이:       {fuel_diff:+.4f} kg ({fuel_pct:+.2f}%)")
+        print(f"{'연료':^12} {sp.total_fuel_kg:>13.2f} kg {op.total_fuel_kg:>13.2f} kg "
+              f"{fuel_diff:>+13.2f} kg {fuel_pct:>+9.2f}%")
         
         # 결론
-        print(f"\n💡 결론:")
+        print("\n" + "─"*70)
+        print(f"💡 결론:")
         if abs(fuel_diff) < 0.01:
-            print(f"  ⚠️  두 경로가 동일합니다 (ShipDynamics.dll 미작동 가능성)")
+            print(f"   ⚠️  두 경로가 거의 동일합니다 (날씨 데이터 미반영 가능성)")
         elif fuel_diff < 0:
-            print(f"  ✅ 최적 경로가 {abs(fuel_diff):.4f} kg ({abs(fuel_diff)/1000:.6f} tons) 연료 절감!")
+            saved_tons = abs(fuel_diff) / 1000
+            print(f"   ✅ 최적 경로가 연료 {abs(fuel_diff):.2f} kg ({saved_tons:.4f} tons) 절감!")
+            print(f"   ✅ 연료 효율 개선: {abs(fuel_pct):.2f}%")
         else:
-            print(f"  ⚠️  최단 경로가 {fuel_diff:.4f} kg 더 효율적 (알고리즘 조정 필요)")
+            print(f"   ⚠️  최단 경로가 {fuel_diff:.2f} kg 더 효율적 (알고리즘 재검토 필요)")
     
-    print("\n" + "="*60)
-    print("테스트 완료!")
-    print("="*60)
+    print("\n" + "="*70)
+    print("✅ 테스트 완료!")
+    print("="*70)
     
     return True
 
 # ================================================================
-# 4. 실행
+# 5. 실행
 # ================================================================
 
 if __name__ == "__main__":
     try:
+        # 커맨드라인 인자 파싱
+        waypoints, config_args = parse_arguments()
+        
+        print("="*70)
+        print("🚢 Ship Routing Algorithm - Python Integration Test")
+        print("="*70)
+        print(f"\n【 입력 웨이포인트 】({len(waypoints)}개)")
+        for i, (lat, lon) in enumerate(waypoints, 1):
+            print(f"  WP{i}: 위도 {lat}, 경도 {lon}")
+        
+        print(f"\n【 항해 설정 】")
+        print(f"  선박 속도: {config_args.speed} m/s")
+        print(f"  흘수: {config_args.draft} m")
+        print(f"  그리드 크기: {config_args.grid_size} km")
+        
         # 환경 설정
         setup_environment()
         
@@ -412,7 +514,7 @@ if __name__ == "__main__":
         algorithm_module = import_module()
         
         # 테스트 실행
-        success = run_test(algorithm_module)
+        success = run_test(algorithm_module, waypoints, config_args)
         
         # 종료 코드
         sys.exit(0 if success else 1)

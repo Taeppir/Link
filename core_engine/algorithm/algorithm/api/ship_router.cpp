@@ -88,14 +88,14 @@ VoyageResult ShipRouter::CalculateRoute(
         return MakeErrorResult("At least 2 waypoints required");
     }
     
-    std::cout << "\n=== Route Calculation ===" << std::endl;
+    std::cout << "\n[ShipRouter] Route Calculation -------------------------------" << std::endl;
     std::cout << "Waypoints: " << waypoints.size() << ", Grid: " << config.gridCellSizeKm << "km" << std::endl;
     
     try {
         // ============================================================
         // STEP 1: 그리드 생성
         // ============================================================
-        std::cout << "\n[1/4] Building grid..." << std::endl;
+        // std::cout << "\n(1) Building grid..." << std::endl;
         NavigableGrid grid = BuildGrid(
             waypoints,
             config.gridCellSizeKm,
@@ -105,7 +105,7 @@ VoyageResult ShipRouter::CalculateRoute(
         // ============================================================
         // STEP 2: 웨이포인트 스냅핑
         // ============================================================
-        std::cout << "\n[2/4] Snapping waypoints..." << std::endl;
+        // std::cout << "\n(2) Snapping waypoints..." << std::endl;
         std::vector<SnappingInfo> snapping_info = SnapWaypoints(
             grid,
             waypoints,
@@ -138,7 +138,7 @@ VoyageResult ShipRouter::CalculateRoute(
         // ============================================================
         SinglePathResult shortest_result;
         if (config.calculateShortest) {
-            std::cout << "\n[3/4] Finding shortest path..." << std::endl;
+            // std::cout << "\n(3) Finding shortest path..." << std::endl;
             shortest_result = FindShortestPath(grid, snapped_waypoints, config);
             
             if (!shortest_result.success) {
@@ -153,7 +153,7 @@ VoyageResult ShipRouter::CalculateRoute(
         // ============================================================
         SinglePathResult optimal_result;
         if (config.calculateOptimized) {
-            std::cout << "\n[4/4] Finding optimized path..." << std::endl;
+            // std::cout << "\n(4) Finding optimized path..." << std::endl;
             optimal_result = FindOptimalPath(
                 grid,
                 snapped_waypoints,
@@ -182,8 +182,7 @@ VoyageResult ShipRouter::CalculateRoute(
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
         
-        std::cout << "\n=== Route calculation completed in " 
-                  << duration.count() << "ms ===" << std::endl;
+        // std::cout << "\n=== Route calculation completed in " << duration.count() << "ms ===" << std::endl;
         
         return result;
         

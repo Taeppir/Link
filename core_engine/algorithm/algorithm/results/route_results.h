@@ -68,7 +68,7 @@ enum class SnappingStatus {
 // 좌표 스내핑 정보
 // ============================================================
 struct SnappingInfo {
-    SnappingStatus status;            // 스냅핑 상태
+    SnappingStatus status = SnappingStatus::FAILED;            // 스냅핑 상태
     GeoCoordinate original;           // 원본 좌표
     GeoCoordinate snapped;            // 스냅된 좌표
     bool was_snapped;                 // 스냅 여부

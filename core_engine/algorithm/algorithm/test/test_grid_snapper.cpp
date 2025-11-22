@@ -3,9 +3,12 @@
 #include "results/route_results.h"
 #include "types/geo_types.h"
 #include <iostream>
+#include <fstream>
 
 int main() {
     try {
+
+
         std::cout << "=== Grid Builder & Waypoint Snapper Test ===" << std::endl;
 
         // ========================================
@@ -17,23 +20,25 @@ int main() {
         // GridBuilder 생성
         GridBuilder builder;
 
-        // GEBCO 데이터 로드
-        //std::string gebcoPath = "../data/GEBCO_2024_sub_ice_topo.nc";
-        std::string gebcoPath = "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GEBCO_2024_sub_ice_topo.nc";
+        // ✨ CMake가 작업 디렉토리를 CMAKE_SOURCE_DIR로 설정하므로 ./data/ 사용
+        std::string gebcoPath = "../../../data/gebco/GEBCO_2024_sub_ice_topo.nc";
+        std::string gshhsPath = "../../../data/gshhs/GSHHS_i_L1.shp";
     
+        std::cout << "Loading GEBCO from: \"" << gebcoPath << "\"" << std::endl;
         if (builder.LoadBathymetryData(gebcoPath)) {
             std::cout << "✓ GEBCO loaded successfully" << std::endl;
         } else {
             std::cerr << "✗ Failed to load GEBCO" << std::endl;
+            std::cerr << "Tip: Ensure data file exists at: " << gebcoPath << std::endl;
             return 1;
         }
 
-        // GSHHS 데이터 로드
-        std::string gshhsPath = "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GSHHS_i_L1.shp";
+        std::cout << "Loading GSHHS from: \"" << gshhsPath << "\"" << std::endl;
         if (builder.LoadCoastlineData(gshhsPath)) {
             std::cout << "✓ GSHHS loaded successfully" << std::endl;
         } else {
             std::cerr << "✗ Failed to load GSHHS" << std::endl;
+            std::cerr << "Tip: Ensure data file exists at: " << gshhsPath << std::endl;
             return 1;
         }
 

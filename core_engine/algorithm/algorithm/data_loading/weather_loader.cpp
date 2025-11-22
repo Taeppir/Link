@@ -71,8 +71,8 @@ std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData(const std
             weatherDir = envPath;
             std::cout << "[WeatherLoader] Using environment variable: " << weatherDir << std::endl;
         } else {
-            // Fallback to default
-            weatherDir = "./weather_data";
+            // Fallback to default (새 구조에 맞게 수정)
+            weatherDir = "./data/weather";
             std::cout << "[WeatherLoader] No environment variable, using default: " << weatherDir << std::endl;
         }
     }

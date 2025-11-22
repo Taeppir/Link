@@ -179,13 +179,18 @@ int main() {
         
         ShipRouter router;
         
-        // GEBCO data
-        std::string gebcoPath = "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GEBCO_2024_sub_ice_topo.nc";
-        std::cout << "  Loading GEBCO: " << gebcoPath << std::endl;
+        // ✨ CMake가 작업 디렉토리를 CMAKE_SOURCE_DIR로 설정하므로 ./data/ 사용
+        std::string gebcoPath = "../../../data/gebco/GEBCO_2024_sub_ice_topo.nc";
+        std::string gshhsPath = "../../../data/gshhs/GSHHS_i_L1.shp";
         
-        if (!router.Initialize(gebcoPath, 
-                              "C:/Users/kth12/Downloads/link/core_engine/algorithm/algorithm/data/GSHHS_i_L1.shp")) {
+        std::cout << "  Loading GEBCO: \"" << gebcoPath << "\"" << std::endl;
+        std::cout << "  Loading GSHHS: \"" << gshhsPath << "\"" << std::endl;
+        
+        if (!router.Initialize(gebcoPath, gshhsPath)) {
             std::cerr << "✗ Failed to initialize ShipRouter" << std::endl;
+            std::cerr << "Tip: Ensure data files are at:" << std::endl;
+            std::cerr << "  - data/gebco/GEBCO_2024_sub_ice_topo.nc" << std::endl;
+            std::cerr << "  - data/gshhs/GSHHS_i_L1.shp" << std::endl;
             return 1;
         }
         
@@ -193,7 +198,7 @@ int main() {
         
         // Load weather data (optional)
         std::cout << "\n  Loading weather data..." << std::endl;
-        // Empty string = use WEATHER_DATA_PATH environment variable
+        // Empty string = use WEATHER_DATA_PATH environment variable or default
         if (router.LoadWeatherData("")) {
             std::cout << "  ✓ Weather data loaded (or using zero conditions)" << std::endl;
         } else {
@@ -234,7 +239,7 @@ int main() {
         config.maxSnapRadiusKm = 50.0;          // 50 km snap radius
         config.startTimeUnix = 0;               // Simulation start time
         config.calculateShortest = true;        // Calculate shortest path
-        config.calculateOptimized = true;      // ⚠️ Skip optimized (requires DLL)
+        config.calculateOptimized = true;       // Calculate optimized path
         
         std::cout << "\nVoyage Parameters:" << std::endl;
         std::cout << "  • Ship Speed:      " << config.shipSpeedMps << " m/s" << std::endl;

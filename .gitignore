@@ -33,8 +33,6 @@ env/
 
 # 대용량 데이터 폴더 무시
 core_engine/algorithm/algorithm/data/
-data/
-
 core_engine/algorithm/algorithm/build/
 out/
 build/

@@ -36,15 +36,15 @@ bool GebcoLoader::Open() {
         return false;
     }
 
-#ifdef _DEBUG
-    std::cout << "[DEBUG][GebcoLoader] Opened: " << filepath << "\n"
-        << "  - Raster Size : " << rasterWidth << " x " << rasterHeight << "\n"
-        << "  - GeoTransform: [originLon=" << geoTransform[0]
-        << ", originLat=" << geoTransform[3] << "] "
-        << "Res: [dLon=" << geoTransform[1]
-        << ", dLat=" << geoTransform[5] << "]"
-        << std::endl;
-#endif
+// #ifdef _DEBUG
+//     std::cout << "[DEBUG][GebcoLoader] Opened: " << filepath << "\n"
+//         << "  - Raster Size : " << rasterWidth << " x " << rasterHeight << "\n"
+//         << "  - GeoTransform: [originLon=" << geoTransform[0]
+//         << ", originLat=" << geoTransform[3] << "] "
+//         << "Res: [dLon=" << geoTransform[1]
+//         << ", dLat=" << geoTransform[5] << "]"
+//         << std::endl;
+// #endif
 
     band = dataset->GetRasterBand(1);
     if (!band) {
@@ -154,20 +154,20 @@ bool GebcoLoader::ExtractROI(
         return false;
     }
 
-#ifdef _DEBUG
-    /*
-    std::cout << "[ExtractROI] GEBCO window: Left=" << pixelWindow.leftCol
-        << " Top=" << pixelWindow.topRow
-        << " Rigt=" << pixelWindow.rightCol
-        << " Bottom=" << pixelWindow.bottomRow
-        << " (width=" << pixelWindow.width()
-        << ", height=" << pixelWindow.height() << ")\n";
-    */
-    std::cout << "[ExpandedROI] lat: [" << expandedROI.minLat
-        << ", " << expandedROI.maxLat
-        << "], lon: [" << expandedROI.minLon
-        << ", " << expandedROI.maxLon << "]\n";
-#endif 
+// #ifdef _DEBUG
+//     /*
+//     std::cout << "[ExtractROI] GEBCO window: Left=" << pixelWindow.leftCol
+//         << " Top=" << pixelWindow.topRow
+//         << " Rigt=" << pixelWindow.rightCol
+//         << " Bottom=" << pixelWindow.bottomRow
+//         << " (width=" << pixelWindow.width()
+//         << ", height=" << pixelWindow.height() << ")\n";
+//     */
+//     std::cout << "[ExpandedROI] lat: [" << expandedROI.minLat
+//         << ", " << expandedROI.maxLat
+//         << "], lon: [" << expandedROI.minLon
+//         << ", " << expandedROI.maxLon << "]\n";
+// #endif 
     
 	// Step 2: Read Data with RasterIO()
     int width = pixelWindow.width();

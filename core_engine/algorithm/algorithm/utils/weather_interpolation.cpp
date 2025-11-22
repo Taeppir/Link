@@ -47,6 +47,20 @@ static double getWeatherValue(
     if (it == all_weather_data.end()) {
         return 0.0;
     }
+    
+    // 🔍 디버깅 추가
+    // static bool first_call = true;
+    // if (first_call) {
+    //     std::cout << "[DEBUG getWeatherValue] First call:" << std::endl;
+    //     std::cout << "  File: " << file_key << std::endl;
+    //     std::cout << "  Query time: " << time << std::endl;
+    //     std::cout << "  Data iStartTime: " << it->second.iStartTime << std::endl;
+    //     std::cout << "  Data iNumTime: " << it->second.iNumTime << std::endl;
+    //     std::cout << "  Data iTimeBin: " << it->second.iTimeBin << std::endl;
+    //     std::cout << "  Query lat: " << lat << ", lon: " << lon << std::endl;
+    //     std::cout << "  Data StartLat: " << it->second.StartLat << std::endl;
+    //     std::cout << "  Data StartLon: " << it->second.StartLon << std::endl;
+    // }
 
     int index = get3dIndex(it->second, time, lat, lon);
 

@@ -38,12 +38,12 @@ GridResolution GridResolution::Calculate(
     res.rows = std::min(res.rows, MAX_GRID_SIZE);
     res.cols = std::min(res.cols, MAX_GRID_SIZE);
 
-#ifdef _DEBUG
-    std::cout << "\n2) Grid Definition [cell]\n";
-    std::cout << "[TargetCellSize] " << targetCellSizeKm << "km\n";
-    std::cout << "[GridResolution]\n";
-    std::cout << "  - Block Size (lat/lon): " << res.blockLat << "x" << res.blockLon << " [pixels]\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "\n2) Grid Definition [cell]\n";
+//     std::cout << "[TargetCellSize] " << targetCellSizeKm << "km\n";
+//     std::cout << "[GridResolution]\n";
+//     std::cout << "  - Block Size (lat/lon): " << res.blockLat << "x" << res.blockLon << " [pixels]\n";
+// #endif
     return res;
 }
 

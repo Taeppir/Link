@@ -43,10 +43,6 @@ WeatherDataInput WeatherLoader::LoadBinaryFile(const std::string& filepath) {
     
     file.close();
     
-    std::cout << "  ✓ Loaded: " << fs::path(filepath).filename().string() << std::endl;
-    std::cout << "    Time: " << data.iNumTime << " steps, Lat: " << data.iNumLat 
-              << ", Lon: " << data.iNumLon << std::endl;
-    
     return data;
 }
 
@@ -89,13 +85,9 @@ std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData(const std
     
     // Expected weather files
     const std::vector<std::string> weatherFiles = {
-        "WindDir.bin",
-        "WindSpd.bin",
-        "CurrDir.bin",
-        "CurrSpd.bin",
-        "WaveDir.bin",
-        "WaveHgt.bin",
-        "WavePrd.bin"
+        "WindDir.bin", "WindSpd.bin",
+        "CurrDir.bin", "CurrSpd.bin",
+        "WaveDir.bin", "WaveHgt.bin", "WavePrd.bin"
     };
     
     // Load each file
@@ -103,16 +95,13 @@ std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData(const std
     for (const auto& filename : weatherFiles) {
         fs::path filepath = fs::path(weatherDir) / filename;
         
-        // 파일 존재 확인
         if (!fs::exists(filepath)) {
-            std::cerr << "Warning: Weather file not found: " << filepath << std::endl;
+            // std::cerr << "Warning: Weather file not found: " << filepath << std::endl;
             continue;
         }
         
-        // 파일 로드
         WeatherDataInput data = LoadBinaryFile(filepath.string());
         
-        // 로드 성공 시 맵에 추가
         if (!data.data.empty()) {
             weatherData[filename] = data;
             loadedCount++;
@@ -120,10 +109,9 @@ std::map<std::string, WeatherDataInput> WeatherLoader::LoadWeatherData(const std
     }
     
     if (weatherData.empty()) {
-        std::cout << "Warning: No weather data loaded. Using zero weather conditions." << std::endl;
+        std::cout << "No weather data loaded - using zero weather conditions" << std::endl;
     } else {
-        std::cout << "[WeatherLoader] Successfully loaded " << loadedCount << "/" 
-                  << weatherFiles.size() << " weather files" << std::endl;
+       std::cout << "Weather data loaded (" << loadedCount << " files)" << std::endl;
     }
     
     return weatherData;

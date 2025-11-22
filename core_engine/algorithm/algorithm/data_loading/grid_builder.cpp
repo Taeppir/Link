@@ -42,11 +42,11 @@ NavigableGrid GridBuilder::BuildNavigableGrid(
     // Step 1: Calculate base ROI
     BoundingBox baseROI = CalculateBaseROI(waypoints);
 
-#ifdef _DEBUG
-    std::cout << "1) Data Extraction [pixel]\n";
-    std::cout << "[BaseROI] lat: [" << baseROI.minLat << ", " << baseROI.maxLat
-        << "], lon: [" << baseROI.minLon << ", " << baseROI.maxLon << "]\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "1) Data Extraction [pixel]\n";
+//     std::cout << "[BaseROI] lat: [" << baseROI.minLat << ", " << baseROI.maxLat
+//         << "], lon: [" << baseROI.minLon << ", " << baseROI.maxLon << "]\n";
+// #endif
 
     // Step 2: Calculate block size
     auto [blockLat, blockLon] = GridResolution::CalculateBlockSize(
@@ -56,11 +56,11 @@ NavigableGrid GridBuilder::BuildNavigableGrid(
     // Step 3: Calculate pixel margin
     int pixelMargin = std::max(blockLat, blockLon) * marginCells;
 
-#ifdef _DEBUG
-    std::cout << "  - Margin: " << marginCells << " cells × "
-        << std::max(blockLat, blockLon) << " pixels/cell = "
-        << pixelMargin << " pixels\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "  - Margin: " << marginCells << " cells x "
+//         << std::max(blockLat, blockLon) << " pixels/cell = "
+//         << pixelMargin << " pixels\n";
+// #endif
 
     // Step 4: Extract GEBCO data
     std::vector<std::vector<float>> depths;
@@ -72,17 +72,17 @@ NavigableGrid GridBuilder::BuildNavigableGrid(
         throw std::runtime_error("Failed to extract GEBCO data");
     }
 
-#ifdef _DEBUG
-    std::cout << "  - GEBCO: " << depths.size() << "x"
-        << (depths.empty() ? 0 : depths[0].size()) << "\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "  - GEBCO: " << depths.size() << "x"
+//         << (depths.empty() ? 0 : depths[0].size()) << "\n";
+// #endif
 
     // Step 5: Extract GSHHS polygons
     auto polygons = gshhsLoader_->ExtractROI(expandedROI);
 
-#ifdef _DEBUG
-    std::cout << "  - GSHHS: " << polygons.size() << " polygons\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "  - GSHHS: " << polygons.size() << " polygons\n";
+// #endif
 
     // Step 6: Calculate grid resolution
     auto gridRes = GridResolution::Calculate(
@@ -148,10 +148,10 @@ std::vector<std::vector<float>> GridBuilder::DownsampleDepths(
         targetRows, std::vector<float>(targetCols, 0.0f)
     );
 
-#ifdef _DEBUG
-    std::cout << "[Downsampling] " << srcRows << "x" << srcCols
-        << " -> " << targetRows << "x" << targetCols << "\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "[Downsampling] " << srcRows << "x" << srcCols
+//         << " -> " << targetRows << "x" << targetCols << "\n";
+// #endif
 
     for (int dstRow = 0; dstRow < targetRows; ++dstRow) {
         // Source range covered by this output row (row start/end, end is exclusive)
@@ -188,10 +188,10 @@ std::vector<std::vector<bool>> GridBuilder::RasterizeGSHHS_GDAL(
     int cols = grid.Cols();
     const BoundingBox& geoBounds = grid.Bounds();
 
-#ifdef _DEBUG
-    std::cout << "[Rasterize] Rasterizing "
-        << polygons.size() << " GSHHS polygons...\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "[Rasterize] Rasterizing "
+//         << polygons.size() << " GSHHS polygons...\n";
+// #endif
 
     // 1) Prepare memory vector driver ("MEM")
     GDALDriver* memVectorDriver = GetGDALDriverManager()->GetDriverByName("MEM");
@@ -345,9 +345,9 @@ void GridBuilder::BuildMask(
     const std::vector<std::vector<float>>& downsampledDepths,
     const std::vector<std::vector<bool>>& landMask)
 {
-#ifdef _DEBUG
-    std::cout << "\n3) Applying Grid Masks (GEBCO & GSHHS)\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "\n3) Applying Grid Masks (GEBCO & GSHHS)\n";
+// #endif
 
     // Step 1: GEBCO-based classification
     for (int r = 0; r < grid.Rows(); ++r) {
@@ -366,9 +366,9 @@ void GridBuilder::BuildMask(
         }
     }
 
-#ifdef _DEBUG
-    std::cout << "[Build] Applying GEBCO depth classification...\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "[Build] Applying GEBCO depth classification...\n";
+// #endif
 
     // Step 2: GSHHS overwrite
     int gshhsOverwrites = 0;
@@ -383,10 +383,10 @@ void GridBuilder::BuildMask(
         }
     }
 
-#ifdef _DEBUG
-    std::cout << "[Build] Applying GSHHS land mask ("
-        << gshhsOverwrites << " cells corrected)...\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "[Build] Applying GSHHS land mask ("
+//         << gshhsOverwrites << " cells corrected)...\n";
+// #endif
 
     PrintStatistics(grid);
 }
@@ -412,7 +412,7 @@ void GridBuilder::PrintStatistics(const NavigableGrid& grid) const
     int total = rows * cols;
     
 #ifdef _DEBUG
-    std::cout << "[Grid Statistics] "
+    std::cout << "\n[Grid Statistics] "
         << "Total cells: " << total << "\n"
         << " > LAND: " << landCount << " ("
         << landCount * 100.0 / total << "%)\n"

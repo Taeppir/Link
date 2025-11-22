@@ -26,10 +26,9 @@ bool ShipRouter::Initialize(
     const std::string& gebco_path,
     const std::string& gshhs_path)
 {
-    std::cout << "[ShipRouter] Initializing..." << std::endl;
-    
+    std::cout << "Initializing ShipRouter..." << std::endl;
+
     try {
-        // GridBuilder 생성 및 데이터 로딩
         gridBuilder_ = std::make_unique<GridBuilder>();
         
         if (!gridBuilder_->LoadBathymetryData(gebco_path)) {
@@ -42,7 +41,7 @@ bool ShipRouter::Initialize(
             return false;
         }
         
-        std::cout << "[ShipRouter] ✓ Data loaded successfully" << std::endl;
+        std::cout << "[ShipRouter] Data loaded successfully" << std::endl;
         isInitialized_ = true;
         return true;
         
@@ -57,19 +56,8 @@ bool ShipRouter::LoadWeatherData(const std::string& weather_dir) {
     
     try {
         weatherLoader_ = std::make_unique<WeatherLoader>();
-        
-        // If weather_dir is empty, WeatherLoader will use environment variable
         weatherData_ = weatherLoader_->LoadWeatherData(weather_dir);
-        
         hasWeatherData_ = !weatherData_.empty();
-        
-        if (hasWeatherData_) {
-            std::cout << "[ShipRouter] ✓ Weather data loaded ("
-                      << weatherData_.size() << " files)" << std::endl;
-        } else {
-            std::cout << "[ShipRouter] ⚠ No weather data loaded, "
-                      << "will use zero weather conditions" << std::endl;
-        }
         
         return true;
         
@@ -100,16 +88,14 @@ VoyageResult ShipRouter::CalculateRoute(
         return MakeErrorResult("At least 2 waypoints required");
     }
     
-    std::cout << "\n=== ShipRouter: Starting route calculation ===" << std::endl;
-    std::cout << "Waypoints: " << waypoints.size() << std::endl;
-    std::cout << "Config: cellSize=" << config.gridCellSizeKm 
-              << "km, speed=" << config.shipSpeedMps << "m/s" << std::endl;
+    std::cout << "\n=== Route Calculation ===" << std::endl;
+    std::cout << "Waypoints: " << waypoints.size() << ", Grid: " << config.gridCellSizeKm << "km" << std::endl;
     
     try {
         // ============================================================
         // STEP 1: 그리드 생성
         // ============================================================
-        std::cout << "\n[STEP 1] Building navigable grid..." << std::endl;
+        std::cout << "\n[1/4] Building grid..." << std::endl;
         NavigableGrid grid = BuildGrid(
             waypoints,
             config.gridCellSizeKm,
@@ -119,7 +105,7 @@ VoyageResult ShipRouter::CalculateRoute(
         // ============================================================
         // STEP 2: 웨이포인트 스냅핑
         // ============================================================
-        std::cout << "\n[STEP 2] Snapping waypoints..." << std::endl;
+        std::cout << "\n[2/4] Snapping waypoints..." << std::endl;
         std::vector<SnappingInfo> snapping_info = SnapWaypoints(
             grid,
             waypoints,
@@ -142,7 +128,6 @@ VoyageResult ShipRouter::CalculateRoute(
             return result;
         }
         
-        // 스냅된 좌표 추출
         std::vector<GeoCoordinate> snapped_waypoints;
         for (const auto& info : snapping_info) {
             snapped_waypoints.push_back(info.snapped);
@@ -153,7 +138,7 @@ VoyageResult ShipRouter::CalculateRoute(
         // ============================================================
         SinglePathResult shortest_result;
         if (config.calculateShortest) {
-            std::cout << "\n[STEP 3] Finding shortest path..." << std::endl;
+            std::cout << "\n[3/4] Finding shortest path..." << std::endl;
             shortest_result = FindShortestPath(grid, snapped_waypoints, config);
             
             if (!shortest_result.success) {
@@ -168,7 +153,7 @@ VoyageResult ShipRouter::CalculateRoute(
         // ============================================================
         SinglePathResult optimal_result;
         if (config.calculateOptimized) {
-            std::cout << "\n[STEP 4] Finding optimal path..." << std::endl;
+            std::cout << "\n[4/4] Finding optimized path..." << std::endl;
             optimal_result = FindOptimalPath(
                 grid,
                 snapped_waypoints,
@@ -307,16 +292,12 @@ SinglePathResult ShipRouter::FindPathThroughWaypoints(
         GridCoordinate start = grid.GeoToGrid(waypoints[i]);
         GridCoordinate goal = grid.GeoToGrid(waypoints[i + 1]);
         
-        std::cout << "  Segment " << (i + 1) << "/" << (waypoints.size() - 1)
-                  << ": (" << start.row << "," << start.col << ") -> ("
-                  << goal.row << "," << goal.col << ")" << std::endl;
-        
         // Find path for this segment
         PathSearchResult segment_result = planner.FindPath(grid, start, goal);
         
         // Check if path found
         if (!segment_result.IsSuccess()) {
-            std::cerr << "[ERROR] Path not found for segment " << (i + 1) << std::endl;
+            // std::cerr << "[ERROR] Path not found for segment " << (i + 1) << std::endl;
             return MakeErrorPathResult("Path not found for segment " + std::to_string(i + 1));
         }
         
@@ -324,7 +305,7 @@ SinglePathResult ShipRouter::FindPathThroughWaypoints(
         total_cost += segment_result.total_cost;
         total_time_hours += segment_result.total_time_hours;
         
-        // Append path (skip first point of segment if not first segment to avoid duplication)
+        // Append path
         if (i == 0) {
             complete_path.insert(
                 complete_path.end(),
@@ -339,13 +320,7 @@ SinglePathResult ShipRouter::FindPathThroughWaypoints(
             );
         }
         
-        std::cout << "    ✓ Segment cost: " << segment_result.total_cost
-                  << ", time: " << segment_result.total_time_hours << "h" << std::endl;
     }
-    
-    std::cout << "  Complete path: " << complete_path.size() << " points, "
-              << "total cost: " << total_cost
-              << ", total time: " << total_time_hours << "h" << std::endl;
     
     // Analyze path and create detailed result
     return AnalyzePathResult(
@@ -376,6 +351,9 @@ SinglePathResult ShipRouter::AnalyzePathResult(
         // For optimized path: cost is fuel
         result.summary.total_fuel_kg = total_cost;
         result.summary.total_distance_km = 0.0;  // Calculate from path
+
+        
+
     } else {
         // For shortest path: cost is distance
         result.summary.total_distance_km = total_cost;

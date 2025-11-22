@@ -50,19 +50,15 @@ PathSearchResult OptimizedRoutePlanner::FindPath(
     const GridCoordinate& start,
     const GridCoordinate& goal)
 {
-    std::cout << "[OptimizedPlanner] Finding fuel-optimized path..." << std::endl;
-    
-    // Initialize heuristic parameters
     InitializeHeuristic(start, goal);
     
-    // Run A* search
     PathSearchResult result = AStarEngine::Search(grid, start, goal, *this);
     
     if (result.IsSuccess()) {
-        std::cout << "[OptimizedPlanner] ✓ Path found with fuel: " 
-                  << result.total_cost << " kg" << std::endl;
+        std::cout << "[OptimizedPlanner] Optimized: " << result.total_cost << " kg, " 
+                  << result.total_time_hours << "h" << std::endl;
     } else {
-        std::cerr << "[OptimizedPlanner] ✗ Path not found" << std::endl;
+        std::cerr << "[OptimizedPlanner] Path not found" << std::endl;
     }
     
     return result;
@@ -111,7 +107,7 @@ EdgeCostResult OptimizedRoutePlanner::ComputeEdgeCost(
     
     // 7) Calculate fuel consumption [kg] for this edge
     double fuelKg = fuelRateKgPerHour * timeHours;
-    
+        
     EdgeCostResult result;
     result.cost = fuelKg;
     result.deltaTimeHours = timeHours;

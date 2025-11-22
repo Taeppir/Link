@@ -17,16 +17,14 @@ PathSearchResult ShortestRoutePlanner::FindPath(
     const NavigableGrid& grid,
     const GridCoordinate& start,
     const GridCoordinate& goal)
-{
-    std::cout << "[ShortestPlanner] Finding shortest path..." << std::endl;
-    
+{    
     PathSearchResult result = AStarEngine::Search(grid, start, goal, *this);
     
     if (result.IsSuccess()) {
-        std::cout << "[ShortestPlanner] ✓ Path found with distance: " 
-                  << result.total_cost << " km" << std::endl;
+        std::cout << "[ShortestPlanner] Shortest: " << result.total_cost << " km, " 
+                  << result.total_time_hours << "h" << std::endl;
     } else {
-        std::cerr << "[ShortestPlanner] ✗ Path not found" << std::endl;
+        std::cerr << "[ShortestPlanner] Path not found" << std::endl;
     }
     
     return result;

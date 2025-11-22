@@ -92,15 +92,15 @@ int main() {
             
             switch (info.status) {
             case SnappingStatus::ALREADY_NAVIGABLE:
-                std::cout << "  ✓ Already navigable" << std::endl;
+                std::cout << "  Already navigable" << std::endl;
                 break;
             case SnappingStatus::SNAPPED:
-                std::cout << "  ✓ Snapped: (" << info.snapped.latitude 
+                std::cout << "  Snapped: (" << info.snapped.latitude 
                         << ", " << info.snapped.longitude << ")" << std::endl;
                 std::cout << "  Distance: " << info.snapping_distance_km << " km" << std::endl;
                 break;
             case SnappingStatus::FAILED:
-                std::cout << "  ✗ Failed: " << info.failure_reason << std::endl;
+                std::cout << "  Failed: " << info.failure_reason << std::endl;
                 break;
             }
         }

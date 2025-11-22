@@ -23,10 +23,10 @@ bool GshhsLoader::Open() {
         return false;
     }
 
-#ifdef _DEBUG
-    std::cout << "[DEBUG][GshhsLoader] Opened: " << filepath << "\n"
-        << "  - Polygon count : " << polygons.size() << "\n";
-#endif
+// #ifdef _DEBUG
+//     std::cout << "[DEBUG][GshhsLoader] Opened: " << filepath << "\n"
+//         << "  - Polygon count : " << polygons.size() << "\n";
+// #endif
 
     return true;
 }

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <filesystem>
 
 // ================================================================
 // Helper Functions
@@ -170,6 +171,14 @@ void CompareResults(const SinglePathResult& shortest, const SinglePathResult& op
 
 int main() {
     try {
+        namespace fs = std::filesystem;
+
+        // 디버깅: 현재 위치 확인
+        std::cout << "=== DEBUG INFO ===" << std::endl;
+        std::cout << "Current directory: " << fs::current_path() << std::endl;
+        std::cout << "==================" << std::endl;
+
+
         PrintHeader("ShipRouter Full Integration Test");
         
         // ========================================
@@ -180,8 +189,8 @@ int main() {
         ShipRouter router;
         
         // ✨ CMake가 작업 디렉토리를 CMAKE_SOURCE_DIR로 설정하므로 ./data/ 사용
-        std::string gebcoPath = "../../../data/gebco/GEBCO_2024_sub_ice_topo.nc";
-        std::string gshhsPath = "../../../data/gshhs/GSHHS_i_L1.shp";
+        std::string gebcoPath = "../data/gebco/GEBCO_2024_sub_ice_topo.nc";
+        std::string gshhsPath = "../data/gshhs/GSHHS_i_L1.shp";
         
         std::cout << "  Loading GEBCO: \"" << gebcoPath << "\"" << std::endl;
         std::cout << "  Loading GSHHS: \"" << gshhsPath << "\"" << std::endl;

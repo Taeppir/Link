@@ -21,8 +21,8 @@ int main() {
         GridBuilder builder;
 
         // ✨ CMake가 작업 디렉토리를 CMAKE_SOURCE_DIR로 설정하므로 ./data/ 사용
-        std::string gebcoPath = "../../../data/gebco/GEBCO_2024_sub_ice_topo.nc";
-        std::string gshhsPath = "../../../data/gshhs/GSHHS_i_L1.shp";
+        std::string gebcoPath = "../data/gebco/GEBCO_2024_sub_ice_topo.nc";
+        std::string gshhsPath = "../data/gshhs/GSHHS_i_L1.shp";
     
         std::cout << "Loading GEBCO from: \"" << gebcoPath << "\"" << std::endl;
         if (builder.LoadBathymetryData(gebcoPath)) {

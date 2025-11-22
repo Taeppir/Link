@@ -3,6 +3,7 @@
 #include "route_planner.h"
 #include "path_types.h"
 #include "../types/grid_types.h"
+#include "../types/voyage_types.h"
 #include "../types/weather_types.h"
 #include <map>
 #include <string>

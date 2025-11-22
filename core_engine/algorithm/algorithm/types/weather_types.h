@@ -27,10 +27,3 @@ struct Weather {
     double waveHgt = 0.0;   // meters
     double wavePrd = 0.0;   // seconds
 };
-
-struct VoyageInfo {
-    double heading = 0.0;     // degrees
-    double shipSpeed = 0.0;   // m/s
-    double draft = 0.0;       // meters
-    double trim = 0.0;        // meters
-};

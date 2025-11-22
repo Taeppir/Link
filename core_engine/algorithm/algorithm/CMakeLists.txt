@@ -143,6 +143,19 @@ function(copy_dll_to_target target_name)
     endif()
 endfunction()
 
+# ==========================================================
+# nlohmann/json 라이브러리 가져오기 (FetchContent)
+# ==========================================================
+include(FetchContent)
+
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        v3.11.3  # 안정적인 버전 사용
+)
+
+FetchContent_MakeAvailable(json)
+
 # ============================================
 # 1. types 라이브러리
 # ============================================
@@ -156,6 +169,7 @@ target_include_directories(types PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # 2. utils 라이브러리
 # ============================================
 add_library(utils STATIC
+    utils/JSON_maker.cpp
     utils/dll_loader.cpp
     utils/fuel_calculator.cpp
     utils/geo_calculations.cpp
@@ -163,6 +177,7 @@ add_library(utils STATIC
 )
 target_include_directories(utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(utils PUBLIC types)
+target_link_libraries(utils PRIVATE nlohmann_json::nlohmann_json)
 
 # ============================================
 # 3. data_loading 라이브러리

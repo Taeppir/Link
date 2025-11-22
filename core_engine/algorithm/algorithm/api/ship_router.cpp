@@ -6,6 +6,7 @@
 #include "../utils/time_calculator.h"
 #include "../utils/fuel_calculator.h"
 #include "../utils/weather_interpolation.h"
+#include "../utils/JSON_maker.h"
 #include <iostream>
 #include <chrono>
 
@@ -177,13 +178,60 @@ VoyageResult ShipRouter::CalculateRoute(
         result.snapping_info = snapping_info;
         result.shortest_path = shortest_result;
         result.optimized_path = optimal_result;
+
+        // ============================================================
+        // [JSON 내보내기]
+        // ============================================================
+        std::string save_dir = config.output_path;
+        
+        if (!save_dir.empty()) {
+            char last_char = save_dir.back();
+            if (last_char != '/' && last_char != '\\') {
+                save_dir += "/";
+            }
+
+            // --- 최단 경로 저장 (파란색) ---
+            if (shortest_result.success) {
+                std::vector<GeoCoordinate> path_pts;
+                // 경로 포인트 추출
+                for (const auto& d : shortest_result.path_details) path_pts.push_back(d.position);
+                
+                // [A] Simple: 경로 + 스내핑된 마커 (파란색 마커)
+                SaveGeoPointsToJson(path_pts, snapping_info, 
+                                save_dir + "shortest_path_simple.json", "#0000FF");
+
+                // [B] Debug: 원본(회색) <-> 스내핑(빨강) + 경로(파랑)
+                SaveRouteDebugJson(path_pts, snapping_info, 
+                                save_dir + "shortest_path_debug.json", "#0000FF");
+            }
+
+            // --- 최적 경로 저장 (빨간색) ---
+            if (optimal_result.success) {
+                std::vector<GeoCoordinate> path_pts;
+                for (const auto& d : optimal_result.path_details) path_pts.push_back(d.position);
+
+                // [A] Simple: 경로 + 스내핑된 마커 (빨간색 마커)
+                SaveGeoPointsToJson(path_pts, snapping_info, 
+                                save_dir + "optimized_path_simple.json", "#FF0000");
+
+                // [B] Debug: 원본(회색) <-> 스내핑(빨강) + 경로(빨강)
+                SaveRouteDebugJson(path_pts, snapping_info, 
+                                save_dir + "optimized_path_debug.json", "#FF0000");
+            }
+            
+            std::cout << "[DEBUG] Saved JSON results to: " << save_dir << std::endl;
+
+        } else {
+            // 경로가 없으면 저장 안 함 (혹은 현재 디렉토리에 저장하도록 할 수도 있음)
+            // std::cout << "[DEBUG] No output_path specified. JSON save skipped." << std::endl;
+        }
+        
+        // ============================================================
         
         // 계산 시간
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-        
-        // std::cout << "\n=== Route calculation completed in " << duration.count() << "ms ===" << std::endl;
-        
+
         return result;
         
     } catch (const std::exception& e) {

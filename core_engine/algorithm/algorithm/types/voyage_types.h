@@ -1,9 +1,13 @@
 #pragma once
-
-// ===== VoyageInfo는 weather_types.h에 있으므로 include =====
 #include "weather_types.h"
+#include <string>
 
-// ===== API 설정 구조체 (새로 추가) =====
+struct VoyageInfo {
+    double heading = 0.0;     // degrees
+    double shipSpeed = 0.0;   // m/s
+    double draft = 0.0;       // meters
+    double trim = 0.0;        // meters
+};
 
 struct VoyageConfig {
     // 선박 기본 정보
@@ -24,4 +28,6 @@ struct VoyageConfig {
     // 계산 옵션
     bool calculateShortest = true;
     bool calculateOptimized = true;
+
+    std::string output_path = "";
 };

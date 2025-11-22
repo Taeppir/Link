@@ -73,7 +73,8 @@ PYBIND11_MODULE(algorithm_module, m) {
         .def_readwrite("max_snap_radius_km", &VoyageConfig::maxSnapRadiusKm)
         .def_readwrite("start_time_unix", &VoyageConfig::startTimeUnix)
         .def_readwrite("calculate_shortest", &VoyageConfig::calculateShortest)
-        .def_readwrite("calculate_optimized", &VoyageConfig::calculateOptimized);
+        .def_readwrite("calculate_optimized", &VoyageConfig::calculateOptimized)
+        .def_readwrite("output_path", &VoyageConfig::output_path);
 
     // ============================================================
     // 5. 경로 결과 데이터

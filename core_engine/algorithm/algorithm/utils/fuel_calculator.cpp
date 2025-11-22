@@ -1,5 +1,7 @@
 #include "fuel_calculator.h"
 #include "weather_interpolation.h"
+#include "../types/voyage_types.h"
+
 #include <iostream>
 #include <iomanip>
 #include <cstring>

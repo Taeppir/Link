@@ -1,4 +1,5 @@
 #pragma once
+#include "../types/voyage_types.h"
 #include "../types/weather_types.h"
 #include "dll_loader.h"  // ← ShipOutput calculateFuelConsumption() 선언 포함
 #include <map>

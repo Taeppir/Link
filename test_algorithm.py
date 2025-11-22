@@ -250,7 +250,7 @@ def run_test(algorithm_module, waypoints, config_args):
     
     print("  ✓ 초기화 성공")
     
-    # Step 3: 날씨 데이터 로딩 (선택적)
+    # Step 3: 날씨 데이터 로딩
     print("\n[3/6] 날씨 데이터 로딩...")
     try:
         router.load_weather_data(data_paths['weather'])
@@ -269,25 +269,30 @@ def run_test(algorithm_module, waypoints, config_args):
     
     # Step 5: VoyageConfig 설정
     print("\n[5/6] 항해 설정...")
+    project_root = os.getcwd() 
+    results_dir = os.path.join(project_root, "src", "ui", "results")
+    
+    os.makedirs(results_dir, exist_ok=True)
+    print(f"📂 결과 저장 경로 설정됨: {results_dir}")
+    
     try:
         config = algorithm_module.VoyageConfig()
-        config.ship_speed_mps = config_args.speed
-        config.draft_m = config_args.draft
-        config.grid_cell_size_km = config_args.grid_size
+        
         config.start_time_unix = 1577836800  # 2020-01-01 (날씨 데이터 시작 시간)
         config.calculate_shortest = True
         config.calculate_optimized = True
+        config.output_path = str(results_dir)
         
-        print(f"  ✓ 선박 속도: {config.ship_speed_mps} m/s")
-        print(f"  ✓ 흘수: {config.draft_m} m")
-        print(f"  ✓ 그리드 크기: {config.grid_cell_size_km} km")
         print(f"  ✓ 출발 시간: 2020-01-01")
+        print(f"  ✓ 저장 경로: {config.output_path}")
         
         use_config = True
+        
     except AttributeError:
         print("  ⚠️  VoyageConfig를 찾을 수 없습니다. 기본 설정으로 진행합니다.")
         use_config = False
     
+
     # Step 6: 경로 계산
     print("\n[6/6] 경로 계산 시작...")
     print("  (계산 중... 잠시만 기다려 주세요)")
@@ -349,7 +354,7 @@ def run_test(algorithm_module, waypoints, config_args):
         print(f"\n【 경로 요약 】")
         print(f"  총 거리:        {sp.total_distance_km:.2f} km")
         print(f"  총 시간:        {sp.total_time_hours:.2f} hours ({sp.total_time_hours*60:.1f} min)")
-        print(f"  총 연료 소비:   {sp.total_fuel_kg:.2f} kg ({sp.total_fuel_kg/1000:.4f} tons)")
+        print(f"  총 연료 소비:   {sp.total_fuel_kg:.2f} kg")
         print(f"  평균 속도:      {sp.average_speed_mps:.2f} m/s ({sp.average_speed_mps*1.94384:.2f} knots)")
         print(f"  평균 연료율:    {sp.average_fuel_rate_kg_per_hour:.2f} kg/h")
         print(f"  총 경로점:      {len(result.shortest_path.path_details)}개")
@@ -397,7 +402,7 @@ def run_test(algorithm_module, waypoints, config_args):
         print(f"\n【 경로 요약 】")
         print(f"  총 거리:        {op.total_distance_km:.2f} km")
         print(f"  총 시간:        {op.total_time_hours:.2f} hours ({op.total_time_hours*60:.1f} min)")
-        print(f"  총 연료 소비:   {op.total_fuel_kg:.2f} kg ({op.total_fuel_kg/1000:.4f} tons)")
+        print(f"  총 연료 소비:   {op.total_fuel_kg:.2f} kg")
         print(f"  평균 속도:      {op.average_speed_mps:.2f} m/s ({op.average_speed_mps*1.94384:.2f} knots)")
         print(f"  평균 연료율:    {op.average_fuel_rate_kg_per_hour:.2f} kg/h")
         print(f"  총 경로점:      {len(result.optimized_path.path_details)}개")
@@ -474,8 +479,7 @@ def run_test(algorithm_module, waypoints, config_args):
         if abs(fuel_diff) < 0.01:
             print(f"   ⚠️  두 경로가 거의 동일합니다 (날씨 데이터 미반영 가능성)")
         elif fuel_diff < 0:
-            saved_tons = abs(fuel_diff) / 1000
-            print(f"   ✅ 최적 경로가 연료 {abs(fuel_diff):.2f} kg ({saved_tons:.4f} tons) 절감!")
+            print(f"   ✅ 최적 경로가 연료 {abs(fuel_diff):.2f} kg 절감!")
             print(f"   ✅ 연료 효율 개선: {abs(fuel_pct):.2f}%")
         else:
             print(f"   ⚠️  최단 경로가 {fuel_diff:.2f} kg 더 효율적 (알고리즘 재검토 필요)")

@@ -1,6 +1,7 @@
 #include "optimized_planner.h"
 #include "a_star_engine.h"
 #include "path_utils.h"
+#include "../types/voyage_types.h"
 #include "../utils/geo_calculations.h"
 #include "../utils/time_calculator.h"
 #include "../utils/fuel_calculator.h"

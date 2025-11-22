@@ -11973,3 +11973,246 @@ events:
         - "C:/Program Files/CMake"
         - "C:/Program Files/ShipRouting"
 ...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake:2430 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.1/Modules/FindPython.cmake:685 (include)"
+      - "CMakeLists.txt:79 (find_package)"
+    mode: "program"
+    variable: "_Python_EXECUTABLE_DEBUG"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python3.9_d"
+      - "python3_d"
+      - "python_d"
+    candidate_directories:
+      - "C:/Users/kth12/anaconda3/"
+    searched_directories:
+      - "C:/Users/kth12/anaconda3/python3.9_d.com"
+      - "C:/Users/kth12/anaconda3/python3.9_d.exe"
+      - "C:/Users/kth12/anaconda3/python3.9_d"
+      - "C:/Users/kth12/anaconda3/python3_d.com"
+      - "C:/Users/kth12/anaconda3/python3_d.exe"
+      - "C:/Users/kth12/anaconda3/python3_d"
+      - "C:/Users/kth12/anaconda3/python_d.com"
+      - "C:/Users/kth12/anaconda3/python_d.exe"
+      - "C:/Users/kth12/anaconda3/python_d"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\VCPackages"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\bin\\Roslyn"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Team Tools\\DiagnosticsHub\\Collector"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\\\MSBuild\\Current\\Bin\\amd64"
+        - "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn\\"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\mingw64\\bin"
+        - "C:\\Users\\kth12\\anaconda3"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\mingw-w64\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\usr\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Scripts"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Python\\Launcher\\"
+        - "C:\\Users\\kth12\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Git\\cmd"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Git LFS"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg"
+      CMAKE_INSTALL_PREFIX: "C:/Program Files/ShipRouting"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "C:/Program Files"
+        - "C:/Program Files (x86)"
+        - "C:/Program Files/CMake"
+        - "C:/Program Files/ShipRouting"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake:2430 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.1/Modules/FindPython.cmake:685 (include)"
+      - "CMakeLists.txt:79 (find_package)"
+    mode: "program"
+    variable: "_Python_EXECUTABLE_DEBUG"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python3.9_d"
+      - "python3_d"
+      - "python_d"
+    candidate_directories:
+      - "C:/Users/kth12/anaconda3/"
+    searched_directories:
+      - "C:/Users/kth12/anaconda3/python3.9_d.com"
+      - "C:/Users/kth12/anaconda3/python3.9_d.exe"
+      - "C:/Users/kth12/anaconda3/python3.9_d"
+      - "C:/Users/kth12/anaconda3/python3_d.com"
+      - "C:/Users/kth12/anaconda3/python3_d.exe"
+      - "C:/Users/kth12/anaconda3/python3_d"
+      - "C:/Users/kth12/anaconda3/python_d.com"
+      - "C:/Users/kth12/anaconda3/python_d.exe"
+      - "C:/Users/kth12/anaconda3/python_d"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\VCPackages"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\bin\\Roslyn"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Team Tools\\DiagnosticsHub\\Collector"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\\\MSBuild\\Current\\Bin\\amd64"
+        - "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn\\"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\mingw64\\bin"
+        - "C:\\Users\\kth12\\anaconda3"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\mingw-w64\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\usr\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Scripts"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Python\\Launcher\\"
+        - "C:\\Users\\kth12\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Git\\cmd"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Git LFS"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg"
+      CMAKE_INSTALL_PREFIX: "C:/Program Files/ShipRouting"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "C:/Program Files"
+        - "C:/Program Files (x86)"
+        - "C:/Program Files/CMake"
+        - "C:/Program Files/ShipRouting"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-4.1/Modules/FindPython/Support.cmake:2430 (find_program)"
+      - "C:/Program Files/CMake/share/cmake-4.1/Modules/FindPython.cmake:685 (include)"
+      - "CMakeLists.txt:79 (find_package)"
+    mode: "program"
+    variable: "_Python_EXECUTABLE_DEBUG"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "python3.9_d"
+      - "python3_d"
+      - "python_d"
+    candidate_directories:
+      - "C:/Users/kth12/anaconda3/"
+    searched_directories:
+      - "C:/Users/kth12/anaconda3/python3.9_d.com"
+      - "C:/Users/kth12/anaconda3/python3.9_d.exe"
+      - "C:/Users/kth12/anaconda3/python3.9_d"
+      - "C:/Users/kth12/anaconda3/python3_d.com"
+      - "C:/Users/kth12/anaconda3/python3_d.exe"
+      - "C:/Users/kth12/anaconda3/python3_d"
+      - "C:/Users/kth12/anaconda3/python_d.com"
+      - "C:/Users/kth12/anaconda3/python_d.exe"
+      - "C:/Users/kth12/anaconda3/python_d"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\VCPackages"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\bin\\Roslyn"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Team Tools\\DiagnosticsHub\\Collector"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\\\MSBuild\\Current\\Bin\\amd64"
+        - "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\150\\Tools\\Binn\\"
+        - "C:\\Program Files\\CMake\\bin"
+        - "C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\"
+        - "C:\\mingw64\\bin"
+        - "C:\\Users\\kth12\\anaconda3"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\mingw-w64\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\usr\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Library\\bin"
+        - "C:\\Users\\kth12\\anaconda3\\Scripts"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Python\\Launcher\\"
+        - "C:\\Users\\kth12\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Microsoft VS Code\\bin"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Git\\cmd"
+        - "C:\\Users\\kth12\\AppData\\Local\\Programs\\Git LFS"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe"
+        - "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\vcpkg"
+      CMAKE_INSTALL_PREFIX: "C:/Program Files/ShipRouting"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "C:/Program Files"
+        - "C:/Program Files (x86)"
+        - "C:/Program Files/CMake"
+        - "C:/Program Files/ShipRouting"
+...
